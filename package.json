@@ -1,0 +1,31 @@
+{
+  "name": "oma-forge",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local dev environment for building, running, and debugging Open Multi Agent workflows",
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-multi-agent/oma-forge.git"
+  },
+  "homepage": "https://github.com/open-multi-agent/oma-forge#readme",
+  "bugs": {
+    "url": "https://github.com/open-multi-agent/oma-forge/issues"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "concurrently -n web,server -c blue,green \"npm run dev -w @oma-forge/web\" \"npm run dev -w @oma-forge/server\"",
+    "build": "npm run build -w @oma-forge/server && npm run build -w @oma-forge/web",
+    "preview": "npm run preview -w @oma-forge/web",
+    "lint": "npm run lint -w @oma-forge/server && npm run lint -w @oma-forge/web",
+    "test": "npm run test -w @oma-forge/server"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}
