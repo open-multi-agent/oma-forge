@@ -10,7 +10,7 @@ export function LiveOutput({ tasks }: LiveOutputProps) {
   const finished = tasks.every((task) => terminalStatuses.has(task.status))
 
   return (
-    <div className="bg-surface-container-lowest flex-1 p-3 font-mono text-[10px] leading-relaxed overflow-y-auto space-y-1">
+    <div className="bg-surface-container-lowest p-3 font-mono text-[10px] leading-relaxed space-y-1">
       <p className="text-tertiary">
         {finished
           ? '[SYSTEM] Task graph execution finished.'

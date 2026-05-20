@@ -38,7 +38,7 @@ export function TeamRunDashboard({ result }: TeamRunDashboardProps) {
   return (
     <>
       <main
-        className="p-8 min-h-screen grid-pattern relative overflow-hidden flex flex-col lg:flex-row gap-6"
+        className="p-8 h-full min-h-0 grid-pattern relative overflow-hidden flex flex-col lg:flex-row gap-6"
         onClick={handleBackdropClick}
       >
         <DagViewport width={layout.width} height={layout.height}>

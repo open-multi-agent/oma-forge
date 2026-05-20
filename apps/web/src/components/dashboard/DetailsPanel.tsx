@@ -23,7 +23,7 @@ export function DetailsPanel({ open, goal, tasks, selected, onClose }: DetailsPa
 
   return (
     <aside
-      className={`${open ? 'flex' : 'hidden'} w-full lg:w-[400px] bg-surface-container-high p-6 flex-col gap-8 border-l border-outline-variant/10 relative`}
+      className={`${open ? 'flex flex-1' : 'hidden'} w-full lg:w-[400px] lg:flex-none shrink-0 min-h-0 max-h-full overflow-y-auto overscroll-contain bg-surface-container-high p-6 flex-col gap-8 border-l border-outline-variant/10 relative`}
     >
       <div>
         <h2 className="font-headline font-black text-lg tracking-widest mb-6 text-primary flex items-center gap-2">
@@ -110,7 +110,7 @@ export function DetailsPanel({ open, goal, tasks, selected, onClose }: DetailsPa
           </div>
         </div>
       </div>
-      <div className="flex-1 flex flex-col min-h-[200px]">
+      <div className="flex flex-col">
         <h2 className="font-headline font-black text-[10px] tracking-widest mb-4 text-on-surface-variant">
           LIVE_AGENT_OUTPUT
         </h2>

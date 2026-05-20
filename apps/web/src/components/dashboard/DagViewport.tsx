@@ -111,7 +111,7 @@ export function DagViewport({ width, height, children }: DagViewportProps) {
   return (
     <div
       ref={viewportRef}
-      className="flex-1 relative min-h-[600px] overflow-hidden cursor-grab touch-none"
+      className="flex-1 min-h-0 relative overflow-hidden cursor-grab touch-none"
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
