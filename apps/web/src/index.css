@@ -1,1 +1,72 @@
 @import 'tailwindcss';
+
+@theme {
+  --color-surface: #060e20;
+  --color-on-surface: #dee5ff;
+  --color-background: #060e20;
+  --color-on-background: #dee5ff;
+  --color-primary: #81ecff;
+  --color-on-primary: #005762;
+  --color-primary-dim: #00d4ec;
+  --color-primary-container: #00e3fd;
+  --color-on-primary-container: #004d57;
+  --color-secondary: #fdc003;
+  --color-on-secondary: #553e00;
+  --color-secondary-dim: #ecb200;
+  --color-secondary-container: #785900;
+  --color-on-secondary-container: #fff6ec;
+  --color-tertiary: #b8ffbb;
+  --color-on-tertiary: #006727;
+  --color-tertiary-dim: #4bee74;
+  --color-tertiary-container: #5cfd80;
+  --color-on-tertiary-container: #005d22;
+  --color-error: #ff716c;
+  --color-on-error: #490006;
+  --color-error-dim: #d7383b;
+  --color-error-container: #9f0519;
+  --color-on-error-container: #ffa8a3;
+  --color-outline: #6d758c;
+  --color-outline-variant: #40485d;
+  --color-on-surface-variant: #a3aac4;
+  --color-surface-variant: #192540;
+  --color-surface-dim: #060e20;
+  --color-surface-bright: #1f2b49;
+  --color-surface-container: #0f1930;
+  --color-surface-container-low: #091328;
+  --color-surface-container-lowest: #000000;
+  --color-surface-container-high: #141f38;
+  --color-surface-container-highest: #192540;
+  --color-surface-tint: #81ecff;
+
+  --font-headline: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-label: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  --radius-lg: 0px;
+  --radius-xl: 0px;
+  --radius-2xl: 0px;
+  --radius-3xl: 0px;
+}
+
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-body antialiased;
+  }
+
+  ::selection {
+    @apply bg-primary text-on-primary;
+  }
+}
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+}
+
+.grid-pattern {
+  background-image: radial-gradient(circle, #40485d 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.node-active-glow {
+  box-shadow: 0 0 15px rgba(129, 236, 255, 0.15);
+}
