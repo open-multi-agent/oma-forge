@@ -51,4 +51,27 @@ describe('GET /api/events (SSE)', () => {
 
     await reader.cancel()
   })
+
+  it('forwards run snapshot events to subscribers', async () => {
+    const response = await fetch(`${baseUrl}/api/events`)
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+
+    await reader.read()
+
+    eventHub.publishSnapshot({
+      status: 'running',
+      goal: 'SSE goal',
+      tasks: [{ id: 't1', title: 'Task', status: 'in_progress', dependsOn: [] }],
+    })
+
+    const { value } = await reader.read()
+    const chunk = decoder.decode(value)
+
+    expect(chunk).toContain('"type":"run_snapshot"')
+    expect(chunk).toContain('SSE goal')
+    expect(chunk).toContain('in_progress')
+
+    await reader.cancel()
+  })
 })
