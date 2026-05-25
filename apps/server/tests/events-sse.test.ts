@@ -74,4 +74,27 @@ describe('GET /api/events (SSE)', () => {
 
     await reader.cancel()
   })
+
+  it('forwards trace line events to subscribers', async () => {
+    const response = await fetch(`${baseUrl}/api/events`)
+    const reader = response.body!.getReader()
+    const decoder = new TextDecoder()
+
+    await reader.read()
+
+    eventHub.publishTraceLine({
+      at: Date.now(),
+      level: 'info',
+      agent: 'researcher',
+      message: 'Task started: design',
+    })
+
+    const { value } = await reader.read()
+    const chunk = decoder.decode(value)
+
+    expect(chunk).toContain('"type":"trace_line"')
+    expect(chunk).toContain('Task started: design')
+
+    await reader.cancel()
+  })
 })

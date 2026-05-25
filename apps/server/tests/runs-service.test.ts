@@ -2,10 +2,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { eventHub } from '../src/events/hub.js'
 import { startRun } from '../src/runs/service.js'
 import { currentRun } from '../src/runs/state.js'
+import { traceLog } from '../src/runs/trace-log.js'
 
 describe('startRun', () => {
   afterEach(() => {
     currentRun.reset()
+    traceLog.clear()
     vi.restoreAllMocks()
   })
 

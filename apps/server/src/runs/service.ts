@@ -3,6 +3,7 @@ import { eventHub } from '../events/hub.js'
 import { oma } from '../oma.js'
 import { forgeDemoTeam } from './demo-team.js'
 import { currentRun } from './state.js'
+import { traceLog } from './trace-log.js'
 
 export const DEFAULT_RUN_GOAL =
   'Outline the steps to connect OMA Forge live execution to the team-run dashboard'
@@ -30,6 +31,7 @@ export async function startRun(options: StartRunOptions = {}): Promise<
   const runTeam = options.runTeam ?? ((t, g) => oma.runTeam(t, g))
 
   currentRun.reset()
+  traceLog.clear()
   currentRun.begin(goal)
   publishSnapshot()
 
