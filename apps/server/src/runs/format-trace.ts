@@ -1,5 +1,5 @@
 import type { OrchestratorEvent, StreamEvent, TraceEvent } from '@open-multi-agent/core'
-import type { ForgeTraceLine, TraceLineLevel } from './trace-types.js'
+import type { ForgeTraceLine, TraceLineLevel } from '@oma-forge/shared'
 
 function line(
   level: TraceLineLevel,

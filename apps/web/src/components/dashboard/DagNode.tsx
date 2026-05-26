@@ -1,4 +1,4 @@
-import type { TaskExecutionRecord } from '../../types/team-run.ts'
+import type { TaskExecutionRecord } from '@oma-forge/shared'
 import { durationText, statusStyles } from './status-styles.ts'
 
 type DagNodeProps = {

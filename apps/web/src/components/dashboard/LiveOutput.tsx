@@ -1,5 +1,4 @@
-import type { TaskExecutionRecord } from '../../types/team-run.ts'
-import type { ForgeTraceLine, TraceLineLevel } from '../../types/trace.ts'
+import type { ForgeTraceLine, TaskExecutionRecord, TraceLineLevel } from '@oma-forge/shared'
 
 type LiveOutputProps = {
   readonly tasks: readonly TaskExecutionRecord[]

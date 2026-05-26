@@ -1,4 +1,4 @@
-import type { ForgeTraceLine, TraceLogSnapshot } from './trace-types.js'
+import type { ForgeTraceLine, TraceLogSnapshot } from '@oma-forge/shared'
 
 const DEFAULT_MAX_LINES = 500
 

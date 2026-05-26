@@ -1,11 +1,12 @@
 import type {
   OrchestratorEvent,
+  RunSnapshot,
+  RunStatus,
   Task,
   TaskExecutionRecord,
   TeamRunResult,
-} from '@open-multi-agent/core'
+} from '@oma-forge/shared'
 import { taskToRecord } from './mapper.js'
-import type { RunSnapshot, RunStatus } from './types.js'
 
 export class CurrentRun {
   private status: RunStatus = 'idle'

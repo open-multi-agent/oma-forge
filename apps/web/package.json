@@ -6,11 +6,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run build -w @oma-forge/shared && tsc --noEmit && vite build",
     "preview": "vite preview",
-    "lint": "tsc --noEmit"
+    "lint": "npm run build -w @oma-forge/shared && tsc --noEmit"
   },
   "dependencies": {
+    "@oma-forge/shared": "*",
     "react": "^19.1.0",
     "react-dom": "^19.1.0"
   },

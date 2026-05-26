@@ -1,4 +1,4 @@
-import type { TaskExecutionRecord, TaskStatus } from '../../types/team-run.ts'
+import type { TaskExecutionRecord, TaskStatus } from '@oma-forge/shared'
 
 export type StatusStyle = {
   readonly border: string

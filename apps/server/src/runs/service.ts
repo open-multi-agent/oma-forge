@@ -1,12 +1,12 @@
-import type { Team, TeamRunResult } from '@open-multi-agent/core'
+import { DEFAULT_RUN_GOAL } from '@oma-forge/shared'
+import type { Team, TeamRunResult } from '@oma-forge/shared'
 import { eventHub } from '../events/hub.js'
 import { oma } from '../oma.js'
 import { forgeDemoTeam } from './demo-team.js'
 import { currentRun } from './state.js'
 import { traceLog } from './trace-log.js'
 
-export const DEFAULT_RUN_GOAL =
-  'Outline the steps to connect OMA Forge live execution to the team-run dashboard'
+export { DEFAULT_RUN_GOAL } from '@oma-forge/shared'
 
 export type StartRunOptions = {
   readonly goal?: string

@@ -1,5 +1,5 @@
 import { TeamRunDashboard } from './components/dashboard/TeamRunDashboard.tsx'
-import { DEFAULT_RUN_GOAL } from './lib/constants.ts'
+import { DEFAULT_RUN_GOAL } from '@oma-forge/shared'
 import { useForgeRun } from './hooks/useForgeRun.ts'
 
 export default function App() {

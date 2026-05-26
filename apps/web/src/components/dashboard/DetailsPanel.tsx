@@ -1,5 +1,4 @@
-import type { TaskExecutionRecord } from '../../types/team-run.ts'
-import type { ForgeTraceLine } from '../../types/trace.ts'
+import type { ForgeTraceLine, TaskExecutionRecord } from '@oma-forge/shared'
 import { statusStyles } from './status-styles.ts'
 import { LiveOutput } from './LiveOutput.tsx'
 
