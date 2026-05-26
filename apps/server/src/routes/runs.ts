@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify'
 import { currentRun } from '../runs/state.js'
 import { DEFAULT_RUN_GOAL, startRun } from '../runs/service.js'
+import { traceLog } from '../runs/trace-log.js'
 
 type StartRunBody = {
   readonly goal?: string
@@ -8,6 +9,8 @@ type StartRunBody = {
 
 export const runsRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/api/runs/current', async () => currentRun.toSnapshot())
+
+  fastify.get('/api/runs/trace', async () => traceLog.toSnapshot())
 
   fastify.post<{ Body: StartRunBody }>('/api/runs', async (request, reply) => {
     const goal = request.body?.goal

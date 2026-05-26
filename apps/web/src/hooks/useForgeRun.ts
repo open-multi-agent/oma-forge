@@ -2,7 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { parseForgeEvent } from '../types/forge-events.ts'
 import type { RunSnapshot, RunStatus } from '../types/run-snapshot.ts'
 import type { TeamRunResult } from '../types/team-run.ts'
+import type { ForgeTraceLine, TraceLogSnapshot } from '../types/trace.ts'
 import { DEFAULT_RUN_GOAL } from '../lib/constants.ts'
+
+const MAX_TRACE_LINES = 500
 
 function snapshotToResult(snapshot: RunSnapshot): TeamRunResult {
   return {
@@ -11,9 +14,18 @@ function snapshotToResult(snapshot: RunSnapshot): TeamRunResult {
   }
 }
 
+function appendTraceLine(
+  lines: readonly ForgeTraceLine[],
+  line: ForgeTraceLine,
+): ForgeTraceLine[] {
+  const next = [...lines, line]
+  return next.length > MAX_TRACE_LINES ? next.slice(-MAX_TRACE_LINES) : next
+}
+
 export function useForgeRun() {
   const [runStatus, setRunStatus] = useState<RunStatus>('idle')
   const [result, setResult] = useState<TeamRunResult>({ goal: '', tasks: [] })
+  const [traceLines, setTraceLines] = useState<readonly ForgeTraceLine[]>([])
   const [healthOk, setHealthOk] = useState<boolean | null>(null)
   const [startError, setStartError] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState(false)
@@ -23,6 +35,10 @@ export function useForgeRun() {
     setResult(snapshotToResult(snapshot))
   }, [])
 
+  const appendLine = useCallback((line: ForgeTraceLine) => {
+    setTraceLines((prev) => appendTraceLine(prev, line))
+  }, [])
+
   useEffect(() => {
     let cancelled = false
 
@@ -30,6 +46,13 @@ export function useForgeRun() {
       .then((res) => (res.ok ? res.json() : null))
       .then((snapshot: RunSnapshot | null) => {
         if (!cancelled && snapshot) applySnapshot(snapshot)
+      })
+      .catch(() => {})
+
+    fetch('/api/runs/trace')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: TraceLogSnapshot | null) => {
+        if (!cancelled && body?.lines) setTraceLines(body.lines)
       })
       .catch(() => {})
 
@@ -55,12 +78,15 @@ export function useForgeRun() {
       if (event?.type === 'run_snapshot') {
         applySnapshot(event.data)
       }
+      if (event?.type === 'trace_line') {
+        appendLine(event.data)
+      }
     }
 
     return () => {
       source.close()
     }
-  }, [applySnapshot])
+  }, [applySnapshot, appendLine])
 
   const startRun = useCallback(async (goal?: string) => {
     setStartError(null)
@@ -74,6 +100,8 @@ export function useForgeRun() {
       const body = (await response.json()) as { ok?: boolean; error?: string }
       if (!response.ok) {
         setStartError(body.error ?? `request_failed_${response.status}`)
+      } else {
+        setTraceLines([])
       }
     } catch {
       setStartError('network_error')
@@ -85,6 +113,7 @@ export function useForgeRun() {
   return {
     runStatus,
     result,
+    traceLines,
     healthOk,
     startError,
     isStarting,

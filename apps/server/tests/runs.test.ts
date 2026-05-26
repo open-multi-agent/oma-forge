@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildApp } from '../src/app.js'
 import { currentRun } from '../src/runs/state.js'
+import { traceLog } from '../src/runs/trace-log.js'
 import * as runService from '../src/runs/service.js'
 
 describe('runs API', () => {
@@ -8,13 +9,22 @@ describe('runs API', () => {
 
   beforeEach(async () => {
     currentRun.reset()
+    traceLog.clear()
     app = await buildApp()
   })
 
   afterEach(async () => {
     vi.restoreAllMocks()
     currentRun.reset()
+    traceLog.clear()
     await app.close()
+  })
+
+  it('GET /api/runs/trace returns empty log when idle', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/runs/trace' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ lines: [] })
   })
 
   it('GET /api/runs/current returns idle snapshot', async () => {

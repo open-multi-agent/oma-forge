@@ -1,4 +1,5 @@
 import type { TaskExecutionRecord } from '../../types/team-run.ts'
+import type { ForgeTraceLine } from '../../types/trace.ts'
 import { statusStyles } from './status-styles.ts'
 import { LiveOutput } from './LiveOutput.tsx'
 
@@ -6,11 +7,19 @@ type DetailsPanelProps = {
   readonly open: boolean
   readonly goal: string
   readonly tasks: readonly TaskExecutionRecord[]
+  readonly traceLines: readonly ForgeTraceLine[]
   readonly selected: TaskExecutionRecord | null
   readonly onClose: () => void
 }
 
-export function DetailsPanel({ open, goal, tasks, selected, onClose }: DetailsPanelProps) {
+export function DetailsPanel({
+  open,
+  goal,
+  tasks,
+  traceLines,
+  selected,
+  onClose,
+}: DetailsPanelProps) {
   const metrics = selected?.metrics
   const statusLabel = selected
     ? (statusStyles[selected.status] ?? statusStyles.pending).chip
@@ -114,7 +123,7 @@ export function DetailsPanel({ open, goal, tasks, selected, onClose }: DetailsPa
         <h2 className="font-headline font-black text-[10px] tracking-widest mb-4 text-on-surface-variant">
           LIVE_AGENT_OUTPUT
         </h2>
-        <LiveOutput tasks={tasks} />
+        <LiveOutput tasks={tasks} traceLines={traceLines} />
       </div>
     </aside>
   )

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import { layoutTasks } from '../../lib/layout-tasks.ts'
 import type { TaskExecutionRecord, TeamRunResult } from '../../types/team-run.ts'
+import type { ForgeTraceLine } from '../../types/trace.ts'
 import { DagEdges } from './DagEdges.tsx'
 import { DagNode } from './DagNode.tsx'
 import { DagViewport } from './DagViewport.tsx'
@@ -8,9 +9,10 @@ import { DetailsPanel } from './DetailsPanel.tsx'
 
 type TeamRunDashboardProps = {
   readonly result: TeamRunResult
+  readonly traceLines: readonly ForgeTraceLine[]
 }
 
-export function TeamRunDashboard({ result }: TeamRunDashboardProps) {
+export function TeamRunDashboard({ result, traceLines }: TeamRunDashboardProps) {
   const tasks = result.tasks ?? []
   const goal = result.goal ?? ''
   const layout = useMemo(() => layoutTasks(tasks), [tasks])
@@ -64,6 +66,7 @@ export function TeamRunDashboard({ result }: TeamRunDashboardProps) {
           open={panelOpen}
           goal={goal}
           tasks={tasks}
+          traceLines={traceLines}
           selected={selected}
           onClose={handleClosePanel}
         />

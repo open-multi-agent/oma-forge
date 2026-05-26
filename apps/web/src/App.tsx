@@ -3,7 +3,8 @@ import { DEFAULT_RUN_GOAL } from './lib/constants.ts'
 import { useForgeRun } from './hooks/useForgeRun.ts'
 
 export default function App() {
-  const { runStatus, result, healthOk, startError, isStarting, startRun } = useForgeRun()
+  const { runStatus, result, traceLines, healthOk, startError, isStarting, startRun } =
+    useForgeRun()
   const isRunning = runStatus === 'running'
 
   return (
@@ -37,7 +38,7 @@ export default function App() {
         </p>
       ) : null}
       {result.tasks && result.tasks.length > 0 ? (
-        <TeamRunDashboard result={result} />
+        <TeamRunDashboard result={result} traceLines={traceLines} />
       ) : (
         <main className="flex h-full items-center justify-center p-8 text-on-surface-variant text-sm">
           <div className="max-w-md text-center space-y-4">
