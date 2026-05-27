@@ -7,7 +7,8 @@ import {
 
 describe('formatProgressEvent', () => {
   it('formats task lifecycle events', () => {
-    const line = formatProgressEvent({ type: 'task_start', task: 't1', agent: 'worker' })
+    const line = formatProgressEvent('run-1', { type: 'task_start', task: 't1', agent: 'worker' })
+    expect(line?.runId).toBe('run-1')
     expect(line?.message).toContain('Task started')
     expect(line?.taskId).toBe('t1')
     expect(line?.agent).toBe('worker')
@@ -16,7 +17,7 @@ describe('formatProgressEvent', () => {
 
 describe('formatTraceEvent', () => {
   it('formats tool call traces', () => {
-    const line = formatTraceEvent({
+    const line = formatTraceEvent('run-1', {
       type: 'tool_call',
       runId: 'r1',
       startMs: 0,
@@ -35,7 +36,7 @@ describe('formatTraceEvent', () => {
 
   it('ignores agent_stream trace duplicates', () => {
     expect(
-      formatTraceEvent({
+      formatTraceEvent('run-1', {
         type: 'agent_stream',
         runId: 'r1',
         startMs: 0,
@@ -50,7 +51,8 @@ describe('formatTraceEvent', () => {
 
 describe('formatStreamEvent', () => {
   it('formats text stream deltas', () => {
-    const line = formatStreamEvent('writer', { type: 'text', data: 'Hello' })
+    const line = formatStreamEvent('run-1', 'writer', { type: 'text', data: 'Hello' })
+    expect(line?.runId).toBe('run-1')
     expect(line?.level).toBe('stream')
     expect(line?.message).toBe('Hello')
     expect(line?.agent).toBe('writer')

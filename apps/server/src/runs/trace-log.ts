@@ -23,5 +23,3 @@ export class TraceLog {
     return { lines: this.lines }
   }
 }
-
-export const traceLog = new TraceLog()

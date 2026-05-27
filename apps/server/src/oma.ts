@@ -5,33 +5,50 @@ import {
   formatStreamEvent,
   formatTraceEvent,
 } from './runs/format-trace.js'
-import { currentRun } from './runs/state.js'
+import { runRegistry } from './runs/registry.js'
 import type { ForgeTraceLine } from '@oma-forge/shared'
-import { traceLog } from './runs/trace-log.js'
 
-function publishTraceLine(entry: ForgeTraceLine | null): void {
+function publishTraceLine(session: import('./runs/session.js').RunSession, entry: ForgeTraceLine | null): void {
   if (!entry) return
-  traceLog.append(entry)
+  session.appendTrace(entry)
   eventHub.publishTraceLine(entry)
+}
+
+function getActiveSession() {
+  const session = runRegistry.getActive()
+  if (!session?.isRunning()) return null
+  return session
 }
 
 /** Shared OMA Core orchestrator for the Forge local API. */
 export const oma = new OpenMultiAgent({
   onProgress: (event) => {
-    publishTraceLine(formatProgressEvent(event))
-    currentRun.applyProgress(event)
+    const session = getActiveSession()
+    if (!session) return
+
+    publishTraceLine(session, formatProgressEvent(session.id, event))
+    session.applyProgress(event)
     eventHub.publishProgress(event)
-    eventHub.publishSnapshot(currentRun.toSnapshot())
+    eventHub.publishSnapshot(session.toSnapshot())
   },
   onPlanReady: async (tasks) => {
-    currentRun.setPlan(tasks)
-    eventHub.publishSnapshot(currentRun.toSnapshot())
+    const session = getActiveSession()
+    if (!session) return true
+
+    session.setPlan(tasks)
+    eventHub.publishSnapshot(session.toSnapshot())
     return true
   },
   onTrace: (event) => {
-    publishTraceLine(formatTraceEvent(event))
+    const session = getActiveSession()
+    if (!session) return
+
+    publishTraceLine(session, formatTraceEvent(session.id, event))
   },
   onAgentStream: (agentName, event) => {
-    publishTraceLine(formatStreamEvent(agentName, event))
+    const session = getActiveSession()
+    if (!session) return
+
+    publishTraceLine(session, formatStreamEvent(session.id, agentName, event))
   },
 })
