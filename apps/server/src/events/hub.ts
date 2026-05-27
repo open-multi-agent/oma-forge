@@ -1,12 +1,7 @@
 import type { OrchestratorEvent } from '@open-multi-agent/core'
-import type { ForgeTraceLine } from '../runs/trace-types.js'
-import type { RunSnapshot } from '../runs/types.js'
+import type { ForgeEvent, ForgeTraceLine, RunSnapshot } from '@oma-forge/shared'
 
-export type ForgeEvent =
-  | { readonly type: 'connected'; readonly data: { readonly ok: true } }
-  | { readonly type: 'progress'; readonly data: OrchestratorEvent }
-  | { readonly type: 'run_snapshot'; readonly data: RunSnapshot }
-  | { readonly type: 'trace_line'; readonly data: ForgeTraceLine }
+export type { ForgeEvent } from '@oma-forge/shared'
 
 type Listener = (event: ForgeEvent) => void
 

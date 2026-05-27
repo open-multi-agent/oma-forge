@@ -1,8 +1,8 @@
-import type { TeamRunResult } from '../types/team-run.ts'
+import type { ForgeDashboardRun } from '@oma-forge/shared'
 
 const now = Date.now()
 
-export const demoTeamRun: TeamRunResult = {
+export const demoTeamRun: ForgeDashboardRun = {
   goal: 'Build a REST API for multi-agent task orchestration with live DAG visualization',
   tasks: [
     {
@@ -16,7 +16,7 @@ export const demoTeamRun: TeamRunResult = {
         endMs: now - 95_000,
         durationMs: 25_000,
         tokenUsage: { input_tokens: 1842, output_tokens: 956 },
-        toolCalls: [{ name: 'web_search' }],
+        toolCalls: [],
       },
     },
     {
@@ -44,7 +44,7 @@ export const demoTeamRun: TeamRunResult = {
         endMs: now,
         durationMs: 48_000,
         tokenUsage: { input_tokens: 5102, output_tokens: 2894 },
-        toolCalls: [{ name: 'read_file' }, { name: 'edit_file' }],
+        toolCalls: [],
       },
     },
     {

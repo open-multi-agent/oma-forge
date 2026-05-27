@@ -24,6 +24,8 @@ oma-forge/
 ├── apps/
 │   ├── server/       # Fastify API + SSE — hosts @open-multi-agent/core
 │   └── web/          # Vite + React + TypeScript UI
+├── packages/
+│   └── shared/       # Shared Forge API types + OMA Core re-exports
 ├── package.json      # npm workspaces root
 └── README.md
 ```

@@ -1,14 +1,13 @@
 import { useCallback, useMemo, useState } from 'react'
 import { layoutTasks } from '../../lib/layout-tasks.ts'
-import type { TaskExecutionRecord, TeamRunResult } from '../../types/team-run.ts'
-import type { ForgeTraceLine } from '../../types/trace.ts'
+import type { ForgeDashboardRun, ForgeTraceLine, TaskExecutionRecord } from '@oma-forge/shared'
 import { DagEdges } from './DagEdges.tsx'
 import { DagNode } from './DagNode.tsx'
 import { DagViewport } from './DagViewport.tsx'
 import { DetailsPanel } from './DetailsPanel.tsx'
 
 type TeamRunDashboardProps = {
-  readonly result: TeamRunResult
+  readonly result: ForgeDashboardRun
   readonly traceLines: readonly ForgeTraceLine[]
 }
 

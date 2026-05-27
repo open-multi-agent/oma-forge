@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
-import { parseForgeEvent } from '../types/forge-events.ts'
-import type { RunSnapshot, RunStatus } from '../types/run-snapshot.ts'
-import type { TeamRunResult } from '../types/team-run.ts'
-import type { ForgeTraceLine, TraceLogSnapshot } from '../types/trace.ts'
-import { DEFAULT_RUN_GOAL } from '../lib/constants.ts'
+import {
+  DEFAULT_RUN_GOAL,
+  emptyDashboardRun,
+  parseForgeEvent,
+  runSnapshotToDashboard,
+  type ForgeDashboardRun,
+  type ForgeTraceLine,
+  type RunSnapshot,
+  type RunStatus,
+  type TraceLogSnapshot,
+} from '@oma-forge/shared'
 
 const MAX_TRACE_LINES = 500
-
-function snapshotToResult(snapshot: RunSnapshot): TeamRunResult {
-  return {
-    goal: snapshot.goal ?? '',
-    tasks: snapshot.tasks,
-  }
-}
 
 function appendTraceLine(
   lines: readonly ForgeTraceLine[],
@@ -24,7 +23,7 @@ function appendTraceLine(
 
 export function useForgeRun() {
   const [runStatus, setRunStatus] = useState<RunStatus>('idle')
-  const [result, setResult] = useState<TeamRunResult>({ goal: '', tasks: [] })
+  const [result, setResult] = useState<ForgeDashboardRun>(emptyDashboardRun)
   const [traceLines, setTraceLines] = useState<readonly ForgeTraceLine[]>([])
   const [healthOk, setHealthOk] = useState<boolean | null>(null)
   const [startError, setStartError] = useState<string | null>(null)
@@ -32,7 +31,7 @@ export function useForgeRun() {
 
   const applySnapshot = useCallback((snapshot: RunSnapshot) => {
     setRunStatus(snapshot.status)
-    setResult(snapshotToResult(snapshot))
+    setResult(runSnapshotToDashboard(snapshot))
   }, [])
 
   const appendLine = useCallback((line: ForgeTraceLine) => {

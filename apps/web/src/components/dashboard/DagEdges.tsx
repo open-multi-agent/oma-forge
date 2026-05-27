@@ -1,5 +1,5 @@
 import type { LayoutTasksResult } from '../../lib/layout-tasks.ts'
-import type { TaskExecutionRecord } from '../../types/team-run.ts'
+import type { TaskExecutionRecord } from '@oma-forge/shared'
 
 function makeEdgePath(x1: number, y1: number, x2: number, y2: number): string {
   return `M ${x1} ${y1} C ${x1 + 42} ${y1}, ${x2 - 42} ${y2}, ${x2} ${y2}`

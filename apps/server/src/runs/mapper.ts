@@ -1,4 +1,4 @@
-import type { Task, TaskExecutionRecord } from '@open-multi-agent/core'
+import type { Task, TaskExecutionRecord } from '@oma-forge/shared'
 
 export function taskToRecord(task: Task): TaskExecutionRecord {
   return {

@@ -6,7 +6,7 @@ import {
   formatTraceEvent,
 } from './runs/format-trace.js'
 import { currentRun } from './runs/state.js'
-import type { ForgeTraceLine } from './runs/trace-types.js'
+import type { ForgeTraceLine } from '@oma-forge/shared'
 import { traceLog } from './runs/trace-log.js'
 
 function publishTraceLine(entry: ForgeTraceLine | null): void {
