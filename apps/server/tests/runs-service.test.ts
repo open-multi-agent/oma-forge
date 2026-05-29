@@ -1,26 +1,31 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { eventHub } from '../src/events/hub.js'
-import { startRun } from '../src/runs/service.js'
-import { currentRun } from '../src/runs/state.js'
-import { traceLog } from '../src/runs/trace-log.js'
+import { cancelRun, startRun } from '../src/runs/service.js'
+import { runRegistry } from '../src/runs/registry.js'
 
 describe('startRun', () => {
   afterEach(() => {
-    currentRun.reset()
-    traceLog.clear()
+    runRegistry.reset()
     vi.restoreAllMocks()
   })
 
   it('returns run_in_progress when already running', async () => {
-    currentRun.begin('Busy')
+    const first = await startRun({
+      goal: 'Busy',
+      runTeam: () => new Promise(() => {}),
+      team: {} as import('@open-multi-agent/core').Team,
+    })
+    expect(first.ok).toBe(true)
 
-    const result = await startRun({ goal: 'Another' })
-
-    expect(result).toEqual({ ok: false, error: 'run_in_progress' })
+    const second = await startRun({ goal: 'Another' })
+    expect(second).toMatchObject({ ok: false, error: 'run_in_progress' })
+    if (!second.ok) {
+      expect(second.activeRunId).toBe(first.runId)
+    }
   })
 
   it('publishes snapshots from running to completed', async () => {
-    const snapshots: ReturnType<typeof currentRun.toSnapshot>[] = []
+    const snapshots: import('@oma-forge/shared').RunSnapshot[] = []
     vi.spyOn(eventHub, 'publishSnapshot').mockImplementation((snapshot) => {
       snapshots.push(snapshot)
     })
@@ -39,11 +44,39 @@ describe('startRun', () => {
       team: {} as import('@open-multi-agent/core').Team,
     })
 
-    expect(result).toEqual({ ok: true })
+    expect(result.ok).toBe(true)
+    if (result.ok) {
+      expect(result.runId).toBeDefined()
+    }
     await vi.waitFor(() => expect(runTeam).toHaveBeenCalled())
     await vi.waitFor(() => expect(snapshots.at(-1)?.status).toBe('completed'))
 
     expect(snapshots[0]?.status).toBe('running')
+    expect(snapshots[0]?.id).toBe(result.ok ? result.runId : undefined)
     expect(snapshots.at(-1)?.goal).toBe('Done')
+  })
+
+  it('marks run cancelled when abort signal fires', async () => {
+    const runTeam = vi.fn(
+      (_team, _goal, options: { abortSignal: AbortSignal }) =>
+        new Promise((_resolve, reject) => {
+          options.abortSignal.addEventListener('abort', () => {
+            reject(Object.assign(new Error('Aborted'), { name: 'AbortError' }))
+          })
+        }),
+    )
+
+    const started = await startRun({
+      goal: 'Cancel me',
+      runTeam,
+      team: {} as import('@open-multi-agent/core').Team,
+    })
+    expect(started.ok).toBe(true)
+    if (!started.ok) return
+
+    cancelRun(started.runId)
+    await vi.waitFor(() => {
+      expect(runRegistry.get(started.runId)?.toSnapshot().status).toBe('cancelled')
+    })
   })
 })

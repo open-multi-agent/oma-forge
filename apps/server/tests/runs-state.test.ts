@@ -1,15 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { CurrentRun } from '../src/runs/state.js'
+import { RunSession } from '../src/runs/session.js'
 
-describe('CurrentRun', () => {
-  it('begins in idle with an empty snapshot', () => {
-    const run = new CurrentRun()
-    expect(run.toSnapshot()).toEqual({ status: 'idle', tasks: [] })
+describe('RunSession', () => {
+  it('begins in running with an empty task list', () => {
+    const run = new RunSession('run-1', 'Ship the feature')
+    expect(run.toSnapshot()).toMatchObject({
+      id: 'run-1',
+      status: 'running',
+      goal: 'Ship the feature',
+      tasks: [],
+    })
   })
 
   it('maps coordinator plan tasks to records', () => {
-    const run = new CurrentRun()
-    run.begin('Ship the feature')
+    const run = new RunSession('run-1', 'Ship the feature')
     run.setPlan([
       {
         id: 't1',
@@ -30,8 +34,7 @@ describe('CurrentRun', () => {
   })
 
   it('updates task status from progress events', () => {
-    const run = new CurrentRun()
-    run.begin('Run tests')
+    const run = new RunSession('run-1', 'Run tests')
     run.setPlan([
       {
         id: 't1',
@@ -51,8 +54,7 @@ describe('CurrentRun', () => {
   })
 
   it('finishes with team run result tasks and metrics', () => {
-    const run = new CurrentRun()
-    run.begin('Goal')
+    const run = new RunSession('run-1', 'Goal')
     run.finish({
       success: true,
       goal: 'Goal',
@@ -77,6 +79,14 @@ describe('CurrentRun', () => {
 
     const snapshot = run.toSnapshot()
     expect(snapshot.status).toBe('completed')
+    expect(snapshot.finishedAt).toBeDefined()
     expect(snapshot.tasks[0]?.metrics).toBeDefined()
+  })
+
+  it('cancels a running session', () => {
+    const run = new RunSession('run-1', 'Stop me')
+    run.cancel()
+    expect(run.toSnapshot().status).toBe('cancelled')
+    expect(run.abortSignal.aborted).toBe(true)
   })
 })

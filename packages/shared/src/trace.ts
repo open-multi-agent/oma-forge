@@ -1,6 +1,7 @@
 export type TraceLineLevel = 'info' | 'warn' | 'error' | 'stream'
 
 export type ForgeTraceLine = {
+  readonly runId: string
   readonly at: number
   readonly level: TraceLineLevel
   readonly agent?: string
