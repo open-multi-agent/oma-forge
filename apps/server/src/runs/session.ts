@@ -11,6 +11,27 @@ import { TraceLog } from './trace-log.js'
 import { taskToRecord } from './mapper.js'
 
 const TERMINAL_STATUSES = new Set<RunStatus>(['completed', 'failed', 'cancelled'])
+const SHORT_CIRCUIT_TASK_ID = 'short-circuit'
+
+function taskFromProgressData(
+  taskId: string,
+  event: OrchestratorEvent,
+  status: TaskExecutionRecord['status'],
+): TaskExecutionRecord {
+  const taskData = event.data as Task | undefined
+  return {
+    id: taskId,
+    title: taskData?.title ?? taskId,
+    assignee: event.agent ?? taskData?.assignee,
+    status,
+    dependsOn: taskData?.dependsOn ?? [],
+  }
+}
+
+function shortCircuitResultFailed(event: OrchestratorEvent): boolean {
+  const data = event.data as { result?: { success?: boolean } } | undefined
+  return data?.result?.success === false
+}
 
 export class RunSession {
   private status: RunStatus = 'running'
@@ -19,14 +40,17 @@ export class RunSession {
   private finishedAt: number | undefined
 
   private goal: string
+  private workflowPath: string | undefined
 
   constructor(
     readonly id: string,
     goal: string,
+    workflowPath?: string,
     readonly startedAt: number = Date.now(),
     readonly abortController: AbortController = new AbortController(),
   ) {
     this.goal = goal
+    this.workflowPath = workflowPath
   }
 
   isRunning(): boolean {
@@ -45,16 +69,54 @@ export class RunSession {
     this.tasks = tasks.map(taskToRecord)
   }
 
+  setPlanRecords(tasks: TaskExecutionRecord[]): void {
+    this.tasks = tasks
+  }
+
   applyProgress(event: OrchestratorEvent): void {
+    if (event.type === 'agent_start' && event.agent && !event.task) {
+      const data = event.data as { phase?: string } | undefined
+      if (data?.phase === 'short-circuit') {
+        this.upsertTask({
+          id: SHORT_CIRCUIT_TASK_ID,
+          title: `Short-circuit: ${event.agent}`,
+          assignee: event.agent,
+          status: 'in_progress',
+          dependsOn: [],
+        })
+      }
+      return
+    }
+
+    if (event.type === 'agent_complete' && !event.task && event.agent) {
+      const data = event.data as { phase?: string } | undefined
+      if (data?.phase === 'short-circuit') {
+        this.upsertTask({
+          id: SHORT_CIRCUIT_TASK_ID,
+          title: `Short-circuit: ${event.agent}`,
+          assignee: event.agent,
+          status: shortCircuitResultFailed(event) ? 'failed' : 'completed',
+          dependsOn: [],
+        })
+      }
+      return
+    }
+
     if (!event.task) return
+
+    if (event.type === 'task_start' || event.type === 'task_retry') {
+      this.upsertTask(taskFromProgressData(event.task, event, 'in_progress'))
+      return
+    }
+
+    if (!this.tasks.some((task) => task.id === event.task)) {
+      this.upsertTask(taskFromProgressData(event.task, event, 'pending'))
+    }
 
     this.tasks = this.tasks.map((task) => {
       if (task.id !== event.task) return task
 
       switch (event.type) {
-        case 'task_start':
-        case 'task_retry':
-          return { ...task, status: 'in_progress' }
         case 'task_complete':
           return { ...task, status: 'completed' }
         case 'task_skipped':
@@ -103,6 +165,7 @@ export class RunSession {
       id: this.id,
       status: this.status,
       goal: this.goal,
+      workflowPath: this.workflowPath,
       tasks: this.tasks,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
@@ -114,8 +177,18 @@ export class RunSession {
       id: this.id,
       status: this.status as Exclude<RunStatus, 'idle'>,
       goal: this.goal,
+      workflowPath: this.workflowPath,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
     }
+  }
+
+  private upsertTask(record: TaskExecutionRecord): void {
+    const index = this.tasks.findIndex((task) => task.id === record.id)
+    if (index === -1) {
+      this.tasks = [...this.tasks, record]
+      return
+    }
+    this.tasks = this.tasks.map((task, i) => (i === index ? { ...task, ...record } : task))
   }
 }

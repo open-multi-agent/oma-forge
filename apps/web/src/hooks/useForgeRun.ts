@@ -51,9 +51,13 @@ export function useForgeRun() {
   const [cancelError, setCancelError] = useState<string | null>(null)
   const [isStarting, setIsStarting] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
+  const [workflowPath, setWorkflowPath] = useState('')
+  const [goal, setGoal] = useState(DEFAULT_RUN_GOAL)
 
   const selectedRunIdRef = useRef<string | null>(null)
+  const activeRunIdRef = useRef<string | null>(null)
   selectedRunIdRef.current = selectedRunId
+  activeRunIdRef.current = activeRunId
 
   const applySnapshot = useCallback((snapshot: RunSnapshot) => {
     setRunStatus(snapshot.status)
@@ -99,6 +103,15 @@ export function useForgeRun() {
       }
     })()
 
+    fetch('/api/workflow')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((body: { defaultWorkflowPath?: string; defaultGoal?: string } | null) => {
+        if (cancelled) return
+        if (body?.defaultWorkflowPath) setWorkflowPath(body.defaultWorkflowPath)
+        if (body?.defaultGoal) setGoal(body.defaultGoal)
+      })
+      .catch(() => {})
+
     fetch('/api/health')
       .then((res) => (res.ok ? res.json() : null))
       .then((body: { ok?: boolean } | null) => {
@@ -125,14 +138,16 @@ export function useForgeRun() {
       if (event.type === 'run_snapshot') {
         const snapshot = event.data
         void refreshRunsList()
-        if (!selected || snapshot.id === selected) {
+        const active = activeRunIdRef.current
+        if (!selected || snapshot.id === selected || snapshot.id === active) {
           applySnapshot(snapshot)
         }
       }
 
       if (event.type === 'trace_line') {
         const line = event.data
-        if (!selected || line.runId === selected) {
+        const active = activeRunIdRef.current
+        if (!selected || line.runId === selected || line.runId === active) {
           setTraceLines((prev) => appendTraceLine(prev, line))
         }
       }
@@ -144,14 +159,24 @@ export function useForgeRun() {
   }, [applySnapshot, refreshRunsList])
 
   const startRun = useCallback(
-    async (goal?: string) => {
+    async (options?: { goal?: string; workflowPath?: string }) => {
       setStartError(null)
       setIsStarting(true)
+      const runGoal = options?.goal ?? goal
+      const path = options?.workflowPath ?? workflowPath
+      if (runGoal.trim().length === 0) {
+        setStartError('empty_goal')
+        setIsStarting(false)
+        return
+      }
       try {
         const response = await fetch('/api/runs', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ goal: goal ?? DEFAULT_RUN_GOAL }),
+          body: JSON.stringify({
+            goal: runGoal.trim(),
+            workflowPath: path.trim().length > 0 ? path : undefined,
+          }),
         })
         const body = (await response.json()) as {
           ok?: boolean
@@ -164,9 +189,10 @@ export function useForgeRun() {
         }
         if (body.runId) {
           setTraceLines([])
+          setRunStatus('running')
+          setResult({ goal: runGoal.trim(), tasks: [] })
           setActiveRunId(body.runId)
           setSelectedRunId(body.runId)
-          await loadRun(body.runId)
           await refreshRunsList()
         }
       } catch {
@@ -175,7 +201,7 @@ export function useForgeRun() {
         setIsStarting(false)
       }
     },
-    [loadRun, refreshRunsList],
+    [goal, loadRun, refreshRunsList, workflowPath],
   )
 
   const cancelRun = useCallback(async () => {
@@ -219,6 +245,10 @@ export function useForgeRun() {
     cancelError,
     isStarting,
     isCancelling,
+    workflowPath,
+    setWorkflowPath,
+    goal,
+    setGoal,
     startRun,
     cancelRun,
     selectRun,

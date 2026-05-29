@@ -11,6 +11,7 @@ export type RunSnapshot = {
   readonly id?: string
   readonly status: RunStatus
   readonly goal?: string
+  readonly workflowPath?: string
   readonly tasks: readonly TaskExecutionRecord[]
   readonly startedAt?: number
   readonly finishedAt?: number
@@ -21,6 +22,7 @@ export type RunSummary = {
   readonly id: string
   readonly status: Exclude<RunStatus, 'idle'>
   readonly goal?: string
+  readonly workflowPath?: string
   readonly startedAt: number
   readonly finishedAt?: number
 }

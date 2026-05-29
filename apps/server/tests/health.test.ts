@@ -8,18 +8,15 @@ describe('GET /api/health', () => {
     await app?.close()
   })
 
-  it('returns OMA Core status', async () => {
+  it('returns workflow runner status', async () => {
     app = await buildApp()
     const response = await app.inject({ method: 'GET', url: '/api/health' })
 
     expect(response.statusCode).toBe(200)
     const body = response.json()
     expect(body.ok).toBe(true)
+    expect(body.mode).toBe('workflow-runner')
     expect(body.runtime).toBe('@open-multi-agent/core')
-    expect(body.orchestrator).toMatchObject({
-      teams: expect.any(Number),
-      activeAgents: expect.any(Number),
-      completedTasks: expect.any(Number),
-    })
+    expect(body.defaultWorkflowPath).toEqual(expect.stringContaining('workflows/demo.ts'))
   })
 })

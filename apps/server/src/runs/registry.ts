@@ -25,13 +25,13 @@ export class RunRegistry {
     this.activeId = null
   }
 
-  create(goal: string): CreateRunResult {
+  create(goal: string, workflowPath?: string): CreateRunResult {
     const active = this.getActive()
     if (active?.isRunning()) {
       return { ok: false, error: 'run_in_progress', activeRunId: active.id }
     }
 
-    const session = new RunSession(crypto.randomUUID(), goal)
+    const session = new RunSession(crypto.randomUUID(), goal, workflowPath)
     this.runs.set(session.id, session)
     this.order.unshift(session.id)
     this.activeId = session.id

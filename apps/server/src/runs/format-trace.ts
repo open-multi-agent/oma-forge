@@ -1,6 +1,17 @@
 import type { OrchestratorEvent, StreamEvent, TraceEvent } from '@open-multi-agent/core'
 import type { ForgeTraceLine, TraceLineLevel } from '@oma-forge/shared'
 
+function truncate(text: string, max = 160): string {
+  const trimmed = text.trim()
+  if (trimmed.length <= max) return trimmed
+  return `${trimmed.slice(0, max)}…`
+}
+
+function formatToolOutput(output: string): string {
+  const preview = truncate(output.replace(/\s+/g, ' '))
+  return preview.length > 0 ? `: ${preview}` : ''
+}
+
 function line(
   runId: string,
   level: TraceLineLevel,
@@ -34,8 +45,22 @@ export function formatProgressEvent(
       return line(runId, 'warn', `Task retry: ${taskId ?? 'unknown'}`, { agent, taskId })
     case 'agent_start':
       return line(runId, 'info', `Agent started: ${agent ?? 'unknown'}`, { agent, taskId })
-    case 'agent_complete':
-      return line(runId, 'info', `Agent finished: ${agent ?? 'unknown'}`, { agent, taskId })
+    case 'agent_complete': {
+      const data = event.data as
+        | { result?: { success?: boolean; output?: string } }
+        | undefined
+      const failed = data?.result?.success === false
+      const detail =
+        failed && typeof data?.result?.output === 'string'
+          ? truncate(data.result.output.replace(/\s+/g, ' '))
+          : ''
+      return line(
+        runId,
+        failed ? 'error' : 'info',
+        `Agent finished: ${agent ?? 'unknown'}${detail ? ` — ${detail}` : ''}`,
+        { agent, taskId },
+      )
+    }
     case 'budget_exceeded':
       return line(runId, 'error', 'Token budget exceeded', { agent, taskId })
     case 'error':
@@ -66,13 +91,15 @@ export function formatTraceEvent(runId: string, event: TraceEvent): ForgeTraceLi
         `LLM ${event.phase ?? 'turn'} #${event.turn} — ${event.tokens.input_tokens} in / ${event.tokens.output_tokens} out`,
         meta,
       )
-    case 'tool_call':
+    case 'tool_call': {
+      const suffix = event.isError ? ' (failed)' : formatToolOutput(event.output)
       return line(
         runId,
         event.isError ? 'error' : 'info',
-        `Tool ${event.tool}${event.isError ? ' (failed)' : ''}`,
+        `Tool ${event.tool}${suffix}`,
         meta,
       )
+    }
     case 'task':
       return line(
         runId,

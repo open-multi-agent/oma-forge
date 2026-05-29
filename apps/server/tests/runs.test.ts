@@ -2,9 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildApp } from '../src/app.js'
 import { runRegistry } from '../src/runs/registry.js'
 import * as runService from '../src/runs/service.js'
+import { resolveWorkflowPath } from '../src/workflows/paths.js'
 
 describe('runs API', () => {
   let app: Awaited<ReturnType<typeof buildApp>>
+  const stubWorkflowPath = resolveWorkflowPath('workflows/test-stub.ts')
 
   beforeEach(async () => {
     runRegistry.reset()
@@ -15,6 +17,15 @@ describe('runs API', () => {
     vi.restoreAllMocks()
     runRegistry.reset()
     await app.close()
+  })
+
+  it('GET /api/workflow returns default workflow path and goal', async () => {
+    const response = await app.inject({ method: 'GET', url: '/api/workflow' })
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toMatchObject({
+      defaultWorkflowPath: expect.stringContaining('workflows/demo.ts'),
+      defaultGoal: expect.any(String),
+    })
   })
 
   it('GET /api/runs returns empty history when idle', async () => {
@@ -43,12 +54,13 @@ describe('runs API', () => {
       ok: true,
       runId: 'run-test-1',
       goal: 'Test goal',
+      workflowPath: stubWorkflowPath,
     })
 
     const response = await app.inject({
       method: 'POST',
       url: '/api/runs',
-      payload: { goal: 'Test goal' },
+      payload: { goal: 'Test goal', workflowPath: stubWorkflowPath },
     })
 
     expect(response.statusCode).toBe(202)
@@ -56,8 +68,12 @@ describe('runs API', () => {
       ok: true,
       runId: 'run-test-1',
       goal: 'Test goal',
+      workflowPath: stubWorkflowPath,
     })
-    expect(runService.startRun).toHaveBeenCalledWith({ goal: 'Test goal' })
+    expect(runService.startRun).toHaveBeenCalledWith({
+      goal: 'Test goal',
+      workflowPath: stubWorkflowPath,
+    })
   })
 
   it('POST /api/runs rejects empty goal', async () => {
@@ -72,12 +88,12 @@ describe('runs API', () => {
   })
 
   it('POST /api/runs returns 409 when a run is in progress', async () => {
-    runRegistry.create('Busy')
+    runRegistry.create('Busy', stubWorkflowPath)
 
     const response = await app.inject({
       method: 'POST',
       url: '/api/runs',
-      payload: {},
+      payload: { workflowPath: stubWorkflowPath },
     })
 
     expect(response.statusCode).toBe(409)

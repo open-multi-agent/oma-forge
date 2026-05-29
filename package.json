@@ -17,13 +17,14 @@
   },
   "workspaces": [
     "apps/*",
-    "packages/*"
+    "packages/*",
+    "workflows"
   ],
   "scripts": {
-    "dev": "npm run build -w @oma-forge/shared && concurrently -n web,server -c blue,green \"npm run dev -w @oma-forge/web\" \"npm run dev -w @oma-forge/server\"",
-    "build": "npm run build -w @oma-forge/shared && npm run build -w @oma-forge/server && npm run build -w @oma-forge/web",
+    "dev": "npm run build -w @oma-forge/shared && npm run build -w @oma-forge/reporter && concurrently -n web,server -c blue,green \"npm run dev -w @oma-forge/web\" \"npm run dev -w @oma-forge/server\"",
+    "build": "npm run build -w @oma-forge/shared && npm run build -w @oma-forge/reporter && npm run build -w @oma-forge/server && npm run build -w @oma-forge/web",
     "preview": "npm run preview -w @oma-forge/web",
-    "lint": "npm run lint -w @oma-forge/shared && npm run lint -w @oma-forge/server && npm run lint -w @oma-forge/web",
+    "lint": "npm run lint -w @oma-forge/shared && npm run lint -w @oma-forge/reporter && npm run lint -w @oma-forge/server && npm run lint -w @oma-forge/web",
     "test": "npm run test -w @oma-forge/server"
   },
   "devDependencies": {

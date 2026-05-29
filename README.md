@@ -10,22 +10,24 @@ OMA Forge is a local development environment for building, running, and debuggin
 
 In v0.1, OMA Forge will focus on:
 
-- Loading OMA workflows
-- Running workflows via OMA Core
-- Visualizing execution in real time
-- Inspecting traces and outputs
+- Pointing at a user workflow file (TypeScript)
+- Running it via a subprocess (`tsx` + `@oma-forge/reporter`)
+- Visualizing execution in real time (SSE)
+- Inspecting traces and outputs — including tool calls and results
 
-Feature work beyond the scaffold is still in progress.
+Forge does **not** manage tools or MCPs. Those are wired in your workflow file; edit the file and rerun.
 
 ## Project structure
 
 ```
 oma-forge/
 ├── apps/
-│   ├── server/       # Fastify API + SSE — hosts @open-multi-agent/core
+│   ├── server/       # Fastify API + SSE — spawns workflow subprocesses
 │   └── web/          # Vite + React + TypeScript UI
 ├── packages/
-│   └── shared/       # Shared Forge API types + OMA Core re-exports
+│   ├── shared/       # Shared Forge API types + event protocol
+│   └── reporter/     # Hooks for workflow files to stream events to Forge
+├── workflows/        # Example workflow files (e.g. demo.ts)
 ├── package.json      # npm workspaces root
 └── README.md
 ```
@@ -36,8 +38,9 @@ oma-forge/
 | --- | --- |
 | Runtime | Node.js ≥ 18 (aligned with OMA) |
 | Monorepo | npm workspaces |
-| API | Fastify 5 (`/api/health`, `/api/events` SSE) |
-| OMA runtime | `@open-multi-agent/core` in `apps/server` |
+| API | Fastify 5 (`/api/health`, `/api/events` SSE, `/api/runs`) |
+| Workflow execution | User `.ts` files via `tsx` + `@oma-forge/reporter` |
+| OMA runtime | `@open-multi-agent/core` in **your workflow file**, not in Forge |
 | Frontend | Vite 6, React 19, TypeScript 5, Tailwind CSS 4 |
 | Tests | Vitest (server) |
 | Dev | Vite proxies `/api` → local server on port 3001 |
@@ -57,8 +60,39 @@ This starts both workspaces:
 
 - **Web** — [http://localhost:5173](http://localhost:5173)
 - **Server** — [http://localhost:3001](http://localhost:3001)
-  - `GET /api/health` — OMA Core status
-  - `GET /api/events` — SSE stream of orchestrator progress events
+  - `GET /api/health` — runner status
+  - `GET /api/workflow` — default workflow path
+  - `GET /api/events` — SSE stream of run progress and trace events
+  - `POST /api/runs` — start a workflow (`{ goal?, workflowPath? }`)
+
+Set `FORGE_WORKFLOW_PATH` to change the default workflow file.
+
+### Writing a workflow
+
+```ts
+// workflows/my-workflow.ts
+import { OpenMultiAgent } from '@open-multi-agent/core'
+import { bootstrapForgeWorkflow, type ForgeRunContext } from '@oma-forge/reporter'
+
+export default async function run(ctx: ForgeRunContext) {
+  const { goal, abortSignal, reporter } = ctx
+  const oma = new OpenMultiAgent({
+    defaultProvider: 'gemini',
+    defaultApiKey: process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY,
+    onProgress: reporter.onProgress,
+    onTrace: reporter.onTrace,
+    onPlanReady: reporter.onPlanReady,
+    onAgentStream: reporter.onAgentStream,
+  })
+  // Wire tools, MCPs, teams here — Forge never sees them.
+  const team = oma.createTeam('my-team', { /* ... */ })
+  reporter.finish(await oma.runTeam(team, goal, { abortSignal }))
+}
+
+void bootstrapForgeWorkflow(run)
+```
+
+For Gemini models, install `@google/genai` and set `GOOGLE_API_KEY` or `GEMINI_API_KEY`.
 
 Other scripts:
 

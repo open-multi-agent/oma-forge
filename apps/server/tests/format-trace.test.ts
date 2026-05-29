@@ -13,10 +13,20 @@ describe('formatProgressEvent', () => {
     expect(line?.taskId).toBe('t1')
     expect(line?.agent).toBe('worker')
   })
+
+  it('surfaces agent failure details on agent_complete', () => {
+    const line = formatProgressEvent('run-1', {
+      type: 'agent_complete',
+      agent: 'researcher',
+      data: { result: { success: false, output: '401 invalid x-api-key' } },
+    })
+    expect(line?.level).toBe('error')
+    expect(line?.message).toContain('401 invalid x-api-key')
+  })
 })
 
 describe('formatTraceEvent', () => {
-  it('formats tool call traces', () => {
+  it('formats tool call traces with output preview', () => {
     const line = formatTraceEvent('run-1', {
       type: 'tool_call',
       runId: 'r1',
@@ -31,6 +41,7 @@ describe('formatTraceEvent', () => {
       output: 'ok',
     })
     expect(line?.message).toContain('read_file')
+    expect(line?.message).toContain('ok')
     expect(line?.level).toBe('info')
   })
 
