@@ -1,4 +1,6 @@
 import {
+  COORDINATOR_AGENT,
+  COORDINATOR_TASK_ID,
   deserializeTeamRunResult,
   type ForgePlanTask,
   type ForgeWorkflowEvent,
@@ -54,7 +56,16 @@ export function applyForgeWorkflowEvent(
       return false
     }
     case 'plan': {
-      session.setPlanRecords(planTasksToRecords(event.data.tasks))
+      const records = planTasksToRecords(event.data.tasks)
+      session.setPlanRecords(records)
+      publishTraceLine(session, {
+        runId: session.id,
+        at: Date.now(),
+        level: 'info',
+        agent: COORDINATOR_AGENT,
+        taskId: COORDINATOR_TASK_ID,
+        message: `Plan published: ${records.length} tasks`,
+      })
       publishSnapshot(session)
       return false
     }

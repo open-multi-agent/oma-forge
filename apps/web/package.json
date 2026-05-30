@@ -5,7 +5,7 @@
   "license": "Apache-2.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run build -w @oma-forge/shared && vite",
     "build": "npm run build -w @oma-forge/shared && tsc --noEmit && vite build",
     "preview": "vite preview",
     "lint": "npm run build -w @oma-forge/shared && tsc --noEmit"
