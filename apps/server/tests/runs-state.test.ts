@@ -47,10 +47,10 @@ describe('RunSession', () => {
     ])
 
     run.applyProgress({ type: 'task_start', task: 't1' })
-    expect(run.toSnapshot().tasks[0]?.status).toBe('in_progress')
+    expect(run.toSnapshot().tasks.find((t) => t.id === 't1')?.status).toBe('in_progress')
 
     run.applyProgress({ type: 'task_complete', task: 't1' })
-    expect(run.toSnapshot().tasks[0]?.status).toBe('completed')
+    expect(run.toSnapshot().tasks.find((t) => t.id === 't1')?.status).toBe('completed')
   })
 
   it('creates tasks on task_start when no plan was received', () => {
@@ -78,6 +78,27 @@ describe('RunSession', () => {
         status: 'in_progress',
         dependsOn: [],
       },
+    ])
+  })
+
+  it('does not add a coordinator task to the DAG snapshot', () => {
+    const run = new RunSession('run-1', 'Ship the feature')
+    run.applyProgress({ type: 'agent_start', agent: 'coordinator' })
+    expect(run.toSnapshot().tasks).toEqual([])
+
+    run.setPlan([
+      {
+        id: 't1',
+        title: 'Research',
+        status: 'pending',
+        description: 'Research',
+        dependsOn: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ])
+    expect(run.toSnapshot().tasks).toEqual([
+      { id: 't1', title: 'Research', status: 'pending', dependsOn: [] },
     ])
   })
 

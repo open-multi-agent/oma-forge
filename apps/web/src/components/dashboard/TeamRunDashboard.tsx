@@ -6,11 +6,11 @@ import type {
   RunStatus,
   TaskExecutionRecord,
 } from '@oma-forge/shared'
+import { CoordinatorPanel } from './CoordinatorPanel.tsx'
 import { DagEdges } from './DagEdges.tsx'
 import { DagNode } from './DagNode.tsx'
 import { DagViewport } from './DagViewport.tsx'
 import { DetailsPanel } from './DetailsPanel.tsx'
-import { LiveOutput } from './LiveOutput.tsx'
 
 type TeamRunDashboardProps = {
   readonly result: ForgeDashboardRun
@@ -24,7 +24,6 @@ export function TeamRunDashboard({ result, traceLines, runStatus }: TeamRunDashb
   const layout = useMemo(() => layoutTasks(tasks), [tasks])
   const [panelOpen, setPanelOpen] = useState(false)
   const [selected, setSelected] = useState<TaskExecutionRecord | null>(null)
-  const isRunning = runStatus === 'running'
 
   const handleSelect = useCallback((task: TaskExecutionRecord) => {
     setSelected(task)
@@ -38,7 +37,13 @@ export function TeamRunDashboard({ result, traceLines, runStatus }: TeamRunDashb
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
       const target = e.target as HTMLElement
-      if (target.closest('.node') || target.closest('aside')) return
+      if (
+        target.closest('.node') ||
+        target.closest('[data-collateral]') ||
+        target.closest('[data-node-details]')
+      ) {
+        return
+      }
       setPanelOpen(false)
     },
     [],
@@ -47,14 +52,14 @@ export function TeamRunDashboard({ result, traceLines, runStatus }: TeamRunDashb
   return (
     <>
       <main
-        className="p-8 h-full min-h-0 grid-pattern relative overflow-hidden flex flex-col lg:flex-row gap-6"
+        className="p-8 h-full min-h-0 grid-pattern relative overflow-hidden flex flex-col lg:flex-row gap-0"
         onClick={handleBackdropClick}
       >
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col gap-4">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <DagViewport width={layout.width} height={layout.height}>
             <DagEdges tasks={tasks} layout={layout} />
             <div className="relative w-full h-full">
-              {tasks.length === 0 && isRunning ? (
+              {tasks.length === 0 && runStatus === 'running' ? (
                 <div className="absolute inset-0 flex items-center justify-center text-on-surface-variant text-sm normal-case tracking-normal">
                   Waiting for task plan…
                 </div>
@@ -75,23 +80,23 @@ export function TeamRunDashboard({ result, traceLines, runStatus }: TeamRunDashb
               })}
             </div>
           </DagViewport>
-          {isRunning ? (
-            <section className="shrink-0 border border-outline-variant/20 bg-surface-container-lowest">
-              <h2 className="px-3 py-2 text-[10px] font-headline uppercase tracking-widest text-on-surface-variant border-b border-outline-variant/10">
-                Live output
-              </h2>
-              <LiveOutput tasks={tasks} traceLines={traceLines} />
-            </section>
-          ) : null}
         </div>
-        <DetailsPanel
-          open={panelOpen}
-          goal={goal}
-          tasks={tasks}
-          traceLines={traceLines}
-          selected={selected}
-          onClose={handleClosePanel}
-        />
+
+        <div className="flex w-full lg:w-[min(420px,38vw)] shrink-0 min-h-0 max-h-full flex-col border-l border-outline-variant/10 bg-surface-container-high">
+          <CoordinatorPanel
+            traceLines={traceLines}
+            runStatus={runStatus}
+            hasPlanTasks={tasks.length > 0}
+          />
+          <DetailsPanel
+            open={panelOpen}
+            goal={goal}
+            tasks={tasks}
+            traceLines={traceLines}
+            selected={selected}
+            onClose={handleClosePanel}
+          />
+        </div>
       </main>
       <div
         className="fixed left-0 top-0 w-1 h-screen bg-gradient-to-b from-primary via-secondary to-tertiary z-[60] opacity-30 pointer-events-none"
