@@ -3,4 +3,4 @@ export const DEFAULT_WORKFLOW_PATH = 'workflows/demo.ts'
 
 /** Suggested goal when running the demo workflow from the UI or API without an explicit goal. */
 export const DEFAULT_RUN_GOAL =
-  'Research a technical topic and produce a concise summary with next steps'
+  'Research open-multi-agent repository and report on its key features and capabilities.'
