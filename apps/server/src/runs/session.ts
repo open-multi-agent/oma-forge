@@ -66,7 +66,7 @@ export class RunSession {
   }
 
   setPlan(tasks: readonly Task[]): void {
-    this.tasks = tasks.map(taskToRecord)
+    this.setPlanRecords(tasks.map(taskToRecord))
   }
 
   setPlanRecords(tasks: TaskExecutionRecord[]): void {

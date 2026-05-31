@@ -21,6 +21,16 @@ export type {
   TraceLineLevel,
   TraceLogSnapshot,
 } from './trace.js'
+export {
+  COORDINATOR_AGENT,
+  COORDINATOR_TASK_ID,
+  filterTraceLinesForCoordinator,
+  traceLineMatchesCoordinator,
+} from './coordinator.js'
+export {
+  filterTraceLinesForTask,
+  traceLineMatchesTask,
+} from './trace-filter.js'
 export type {
   OrchestratorEvent,
   Task,

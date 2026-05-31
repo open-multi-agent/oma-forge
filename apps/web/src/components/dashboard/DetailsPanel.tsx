@@ -31,7 +31,8 @@ export function DetailsPanel({
 
   return (
     <aside
-      className={`${open ? 'flex flex-1' : 'hidden'} w-full lg:w-[400px] lg:flex-none shrink-0 min-h-0 max-h-full overflow-y-auto overscroll-contain bg-surface-container-high p-6 flex-col gap-8 border-l border-outline-variant/10 relative`}
+      data-node-details
+      className={`${open ? 'flex flex-1' : 'hidden'} min-h-0 overflow-y-auto overscroll-contain p-6 flex-col gap-8 relative`}
     >
       <div>
         <h2 className="font-headline font-black text-lg tracking-widest mb-6 text-primary flex items-center gap-2">
@@ -122,7 +123,7 @@ export function DetailsPanel({
         <h2 className="font-headline font-black text-[10px] tracking-widest mb-4 text-on-surface-variant">
           LIVE_AGENT_OUTPUT
         </h2>
-        <LiveOutput tasks={tasks} traceLines={traceLines} />
+        <LiveOutput tasks={tasks} traceLines={traceLines} scopeTask={selected} />
       </div>
     </aside>
   )
