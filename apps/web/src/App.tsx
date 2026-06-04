@@ -1,5 +1,10 @@
 import { TeamRunDashboard } from './components/dashboard/TeamRunDashboard.tsx'
-import { DEFAULT_WORKFLOW_PATH } from '@oma-forge/shared'
+import {
+  DEFAULT_WORKFLOW_PATH,
+  formatRunStatusLabel,
+  healthBanner,
+  runStatusTone,
+} from '@oma-forge/shared'
 import { useForgeRun } from './hooks/useForgeRun.ts'
 
 export default function App() {
@@ -22,8 +27,12 @@ export default function App() {
     startRun,
     cancelRun,
     selectRun,
+    runHealth,
   } = useForgeRun()
   const isRunning = runStatus === 'running'
+  const runLabel = formatRunStatusLabel(runStatus, runHealth)
+  const runTone = runStatusTone(runStatus, runHealth)
+  const runHealthMessage = healthBanner({ status: runStatus, health: runHealth })
   const showDashboard =
     runStatus === 'running' ||
     runStatus === 'completed' ||
@@ -53,8 +62,18 @@ export default function App() {
           >
             {healthOk === true ? 'API online' : healthOk === false ? 'API offline' : 'API …'}
           </span>
-          <span className="text-on-surface-variant">
-            run: {runStatus}
+          <span
+            className={
+              runTone === 'success'
+                ? 'text-tertiary'
+                : runTone === 'error'
+                  ? 'text-error'
+                  : runTone === 'warn'
+                    ? 'text-secondary'
+                    : 'text-on-surface-variant'
+            }
+          >
+            run: {runLabel}
             {selectedRunId ? ` · ${selectedRunId.slice(0, 8)}` : ''}
           </span>
           <div className="flex items-center gap-2 ml-auto">
@@ -84,7 +103,8 @@ export default function App() {
                 >
                   {runHistory.map((run) => (
                     <option key={run.id} value={run.id}>
-                      {run.status} · {run.goal?.slice(0, 24) ?? run.id.slice(0, 8)}
+                      {formatRunStatusLabel(run.status, run.health)} ·{' '}
+                      {run.goal?.slice(0, 24) ?? run.id.slice(0, 8)}
                       {run.id === activeRunId ? ' (active)' : ''}
                     </option>
                   ))}
@@ -127,6 +147,11 @@ export default function App() {
         {cancelError ? (
           <p className="mt-1 text-[10px] font-mono text-error normal-case tracking-normal">
             cancel: {cancelError}
+          </p>
+        ) : null}
+        {runHealthMessage ? (
+          <p className="mt-2 text-[10px] font-mono text-error normal-case tracking-normal">
+            {runHealthMessage}
           </p>
         ) : null}
       </header>

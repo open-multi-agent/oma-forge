@@ -18,5 +18,6 @@ describe('GET /api/health', () => {
     expect(body.mode).toBe('workflow-runner')
     expect(body.runtime).toBe('@open-multi-agent/core')
     expect(body.defaultWorkflowPath).toEqual(expect.stringContaining('workflows/demo.ts'))
+    expect(body.runStallTimeoutMs).toBeGreaterThan(0)
   })
 })

@@ -3,7 +3,16 @@ export type { ForgeDashboardRun } from './dashboard.js'
 export { emptyDashboardRun, runSnapshotToDashboard } from './dashboard.js'
 export type { ForgeEvent } from './events.js'
 export { parseForgeEvent } from './events.js'
-export type { RunSnapshot, RunStatus, RunSummary } from './run.js'
+export type { RunHealth, RunHealthIssue, RunSnapshot, RunStatus, RunSummary } from './run.js'
+export {
+  DEFAULT_RUN_STALL_MS,
+  assessRunCompletion,
+  formatRunStatusLabel,
+  healthBanner,
+  parseRunStallMs,
+  runStatusTone,
+  unhealthyRunHealth,
+} from './run-health.js'
 export {
   FORGE_PROTOCOL_PREFIX,
   deserializeTeamRunResult,

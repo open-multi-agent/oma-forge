@@ -11,7 +11,14 @@ describe('RunRegistry', () => {
   it('lists runs newest first after multiple completed runs', () => {
     const first = registry.create('First')
     expect(first.ok).toBe(true)
-    if (first.ok) first.session.finish({ success: true, agentResults: new Map(), totalTokenUsage: { input_tokens: 0, output_tokens: 0 } })
+    if (first.ok) {
+      first.session.finish({
+        success: true,
+        tasks: [{ id: 't1', title: 'First', status: 'completed', dependsOn: [] }],
+        agentResults: new Map(),
+        totalTokenUsage: { input_tokens: 1, output_tokens: 0 },
+      })
+    }
 
     const second = registry.create('Second')
     expect(second.ok).toBe(true)
@@ -29,9 +36,9 @@ describe('RunRegistry', () => {
     created.session.finish({
       success: true,
       goal: 'Done',
-      tasks: [],
+      tasks: [{ id: 't1', title: 'Done', status: 'completed', dependsOn: [] }],
       agentResults: new Map(),
-      totalTokenUsage: { input_tokens: 0, output_tokens: 0 },
+      totalTokenUsage: { input_tokens: 1, output_tokens: 0 },
     })
 
     expect(registry.currentSnapshot()).toMatchObject({

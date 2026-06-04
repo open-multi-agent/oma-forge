@@ -1,11 +1,13 @@
-import type {
-  OrchestratorEvent,
-  RunSnapshot,
-  RunStatus,
-  RunSummary,
-  Task,
-  TaskExecutionRecord,
-  TeamRunResult,
+import {
+  assessRunCompletion,
+  type OrchestratorEvent,
+  type RunHealth,
+  type RunSnapshot,
+  type RunStatus,
+  type RunSummary,
+  type Task,
+  type TaskExecutionRecord,
+  type TeamRunResult,
 } from '@oma-forge/shared'
 import { TraceLog } from './trace-log.js'
 import { taskToRecord } from './mapper.js'
@@ -35,9 +37,11 @@ function shortCircuitResultFailed(event: OrchestratorEvent): boolean {
 
 export class RunSession {
   private status: RunStatus = 'running'
+  private health: RunHealth = { ok: true }
   private readonly trace = new TraceLog()
   private tasks: TaskExecutionRecord[] = []
   private finishedAt: number | undefined
+  private lastActivityAt: number
 
   private goal: string
   private workflowPath: string | undefined
@@ -51,6 +55,11 @@ export class RunSession {
   ) {
     this.goal = goal
     this.workflowPath = workflowPath
+    this.lastActivityAt = startedAt
+  }
+
+  touchActivity(at: number = Date.now()): void {
+    this.lastActivityAt = at
   }
 
   isRunning(): boolean {
@@ -131,18 +140,38 @@ export class RunSession {
 
   finish(result: TeamRunResult): void {
     this.finishedAt = Date.now()
-    this.status = result.success ? 'completed' : 'failed'
     if (result.goal !== undefined) {
       this.goal = result.goal
     }
     if (result.tasks !== undefined) {
-      this.tasks = [...result.tasks]
+      const prior = new Map(this.tasks.map((task) => [task.id, task]))
+      this.tasks = result.tasks.map((task) => ({
+        ...task,
+        dependsOn:
+          (task.dependsOn?.length ?? 0) > 0
+            ? task.dependsOn
+            : (prior.get(task.id)?.dependsOn ?? []),
+      }))
     }
+
+    const completionHealth = assessRunCompletion(result, this.trace.length)
+    this.health = completionHealth
+    if (!completionHealth.ok) {
+      this.status = 'failed'
+      return
+    }
+
+    this.status = result.success ? 'completed' : 'failed'
   }
 
-  fail(): void {
+  fail(health?: RunHealth): void {
     this.finishedAt = Date.now()
     this.status = 'failed'
+    if (health) this.health = health
+  }
+
+  setHealth(health: RunHealth): void {
+    this.health = health
   }
 
   cancel(): void {
@@ -164,11 +193,13 @@ export class RunSession {
     return {
       id: this.id,
       status: this.status,
+      health: this.health,
       goal: this.goal,
       workflowPath: this.workflowPath,
       tasks: this.tasks,
       startedAt: this.startedAt,
       finishedAt: this.finishedAt,
+      lastActivityAt: this.lastActivityAt,
     }
   }
 
@@ -176,6 +207,7 @@ export class RunSession {
     return {
       id: this.id,
       status: this.status as Exclude<RunStatus, 'idle'>,
+      health: this.health,
       goal: this.goal,
       workflowPath: this.workflowPath,
       startedAt: this.startedAt,

@@ -72,6 +72,7 @@ describe('startRun', () => {
     await vi.waitFor(() => expect(runWorkflow).toHaveBeenCalled())
     await vi.waitFor(() => expect(snapshots.at(-1)?.status).toBe('completed'))
 
+    expect(snapshots.at(-1)?.health?.ok).toBe(true)
     expect(snapshots[0]?.status).toBe('running')
     expect(snapshots[0]?.id).toBe(result.ok ? result.runId : undefined)
     expect(snapshots.at(-1)?.goal).toBe('Live test')

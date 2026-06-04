@@ -123,6 +123,42 @@ describe('RunSession', () => {
     expect(run.toSnapshot().tasks[0]?.status).toBe('completed')
   })
 
+  it('preserves dependsOn from the plan when the final result omits it', () => {
+    const run = new RunSession('run-1', 'Goal')
+    run.setPlan([
+      {
+        id: 't1',
+        title: 'Research',
+        status: 'completed',
+        description: 'Research',
+        dependsOn: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 't2',
+        title: 'Summarize',
+        status: 'failed',
+        description: 'Summarize',
+        dependsOn: ['t1'],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ])
+
+    run.finish({
+      success: false,
+      tasks: [
+        { id: 't1', title: 'Research', status: 'completed', dependsOn: [] },
+        { id: 't2', title: 'Summarize', status: 'failed' },
+      ],
+      agentResults: new Map(),
+      totalTokenUsage: { input_tokens: 1, output_tokens: 0 },
+    })
+
+    expect(run.toSnapshot().tasks[1]?.dependsOn).toEqual(['t1'])
+  })
+
   it('finishes with team run result tasks and metrics', () => {
     const run = new RunSession('run-1', 'Goal')
     run.finish({
