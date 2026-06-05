@@ -67,6 +67,8 @@ This starts both workspaces:
 
 Set `FORGE_WORKFLOW_PATH` to change the default workflow file.
 
+Set `FORGE_RUN_STALL_MS` to control how long a run can go without workflow events before Forge marks it failed (default: 5 minutes). Runs that exit without a `result` event, or report success with no tasks/trace/tokens, are also marked failed with an explicit health reason in the UI.
+
 ### Writing a workflow
 
 ```ts

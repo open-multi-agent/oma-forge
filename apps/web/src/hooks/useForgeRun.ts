@@ -6,6 +6,7 @@ import {
   runSnapshotToDashboard,
   type ForgeDashboardRun,
   type ForgeTraceLine,
+  type RunHealth,
   type RunSnapshot,
   type RunStatus,
   type RunSummary,
@@ -41,6 +42,7 @@ async function fetchRunTrace(runId: string): Promise<readonly ForgeTraceLine[]> 
 
 export function useForgeRun() {
   const [runStatus, setRunStatus] = useState<RunStatus>('idle')
+  const [runHealth, setRunHealth] = useState<RunHealth | undefined>(undefined)
   const [result, setResult] = useState<ForgeDashboardRun>(emptyDashboardRun)
   const [traceLines, setTraceLines] = useState<readonly ForgeTraceLine[]>([])
   const [runHistory, setRunHistory] = useState<readonly RunSummary[]>([])
@@ -61,6 +63,7 @@ export function useForgeRun() {
 
   const applySnapshot = useCallback((snapshot: RunSnapshot) => {
     setRunStatus(snapshot.status)
+    setRunHealth(snapshot.health)
     setResult(runSnapshotToDashboard(snapshot))
     if (snapshot.id) setSelectedRunId(snapshot.id)
   }, [])
@@ -190,6 +193,7 @@ export function useForgeRun() {
         if (body.runId) {
           setTraceLines([])
           setRunStatus('running')
+          setRunHealth({ ok: true })
           setResult({ goal: runGoal.trim(), tasks: [] })
           setActiveRunId(body.runId)
           setSelectedRunId(body.runId)
@@ -235,6 +239,7 @@ export function useForgeRun() {
 
   return {
     runStatus,
+    runHealth,
     result,
     traceLines,
     runHistory,

@@ -57,8 +57,8 @@ export function TeamRunDashboard({ result, traceLines, runStatus }: TeamRunDashb
       >
         <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <DagViewport width={layout.width} height={layout.height}>
-            <DagEdges tasks={tasks} layout={layout} />
-            <div className="relative w-full h-full">
+            <DagEdges layout={layout} />
+            <div className="relative z-[2] w-full h-full">
               {tasks.length === 0 && runStatus === 'running' ? (
                 <div className="absolute inset-0 flex items-center justify-center text-on-surface-variant text-sm normal-case tracking-normal">
                   Waiting for task plan…

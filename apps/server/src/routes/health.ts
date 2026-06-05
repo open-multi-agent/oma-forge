@@ -1,4 +1,5 @@
 import type { FastifyPluginAsync } from 'fastify'
+import { parseRunStallMs } from '@oma-forge/shared'
 import { resolveDefaultWorkflowPath } from '../workflows/paths.js'
 
 export const healthRoutes: FastifyPluginAsync = async (fastify) => {
@@ -7,5 +8,6 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     mode: 'workflow-runner',
     runtime: '@open-multi-agent/core',
     defaultWorkflowPath: resolveDefaultWorkflowPath(),
+    runStallTimeoutMs: parseRunStallMs(),
   }))
 }

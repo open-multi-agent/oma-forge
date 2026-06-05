@@ -11,6 +11,10 @@ export class TraceLog {
     this.lines = []
   }
 
+  get length(): number {
+    return this.lines.length
+  }
+
   append(entry: ForgeTraceLine): ForgeTraceLine {
     this.lines.push(entry)
     if (this.lines.length > this.maxLines) {

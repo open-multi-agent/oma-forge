@@ -42,6 +42,7 @@ export function applyForgeWorkflowEvent(
   event: ForgeWorkflowEvent,
 ): boolean {
   if (event.runId !== session.id) return false
+  session.touchActivity()
 
   switch (event.type) {
     case 'progress': {
@@ -88,7 +89,11 @@ export function applyForgeWorkflowEvent(
         level: 'error',
         message: event.data.message,
       })
-      session.fail()
+      session.fail({
+        ok: false,
+        issue: 'workflow_error',
+        message: event.data.message,
+      })
       publishSnapshot(session)
       return true
     }

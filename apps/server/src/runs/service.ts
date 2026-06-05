@@ -1,8 +1,13 @@
-import { DEFAULT_RUN_GOAL } from '@oma-forge/shared'
+import {
+  DEFAULT_RUN_GOAL,
+  parseRunStallMs,
+  unhealthyRunHealth,
+} from '@oma-forge/shared'
 import { eventHub } from '../events/hub.js'
 import { applyForgeWorkflowEvent } from './event-bridge.js'
 import { runRegistry } from './registry.js'
 import type { RunSession } from './session.js'
+import { createRunWatchdog } from './watchdog.js'
 import { resolveWorkflowPath, workflowPathExists } from '../workflows/paths.js'
 import { runWorkflowSubprocess } from '../workflows/runner.js'
 
@@ -11,6 +16,8 @@ export { DEFAULT_RUN_GOAL } from '@oma-forge/shared'
 export type StartRunOptions = {
   readonly goal?: string
   readonly workflowPath?: string
+  /** Override stall watchdog (ms); defaults to {@link parseRunStallMs}. */
+  readonly stallMs?: number
   readonly runWorkflow?: (
     options: import('../workflows/runner.js').RunWorkflowSubprocessOptions,
   ) => Promise<import('../workflows/runner.js').RunWorkflowSubprocessResult>
@@ -21,6 +28,7 @@ function publishSnapshot(session: RunSession): void {
 }
 
 function appendStderrTrace(session: RunSession, line: string): void {
+  session.touchActivity()
   session.appendTrace({
     runId: session.id,
     at: Date.now(),
@@ -58,6 +66,17 @@ export async function startRun(options: StartRunOptions = {}): Promise<
   publishSnapshot(session)
 
   let finishedByEvent = false
+  const watchdog = createRunWatchdog(session, () => {
+    if (session.isTerminal()) return
+    session.cancel()
+    session.fail(
+      unhealthyRunHealth(
+        'stall_timeout',
+        `No workflow activity for ${Math.round(parseRunStallMs() / 1000)}s — run may be hung.`,
+      ),
+    )
+    publishSnapshot(session)
+  }, options.stallMs)
 
   void runWorkflow({
     runId: session.id,
@@ -65,6 +84,7 @@ export async function startRun(options: StartRunOptions = {}): Promise<
     workflowPath,
     abortSignal: session.abortSignal,
     onEvent: (event) => {
+      watchdog.reset()
       if (applyForgeWorkflowEvent(session, event)) {
         finishedByEvent = true
       }
@@ -72,19 +92,23 @@ export async function startRun(options: StartRunOptions = {}): Promise<
     onStderrLine: (line) => appendStderrTrace(session, line),
   })
     .then(({ exitCode, signal }) => {
+      watchdog.stop()
       if (session.abortSignal.aborted || signal === 'SIGTERM') {
         if (!session.isTerminal()) session.cancel()
-      } else if (!finishedByEvent) {
-        if (exitCode === 0) {
-          if (!session.isTerminal()) session.fail()
-        } else if (!session.isTerminal()) {
-          session.fail()
-        }
+      } else if (!finishedByEvent && !session.isTerminal()) {
+        const detail =
+          exitCode === 0
+            ? 'Workflow process exited without sending a result.'
+            : `Workflow process exited with code ${exitCode ?? 'unknown'}.`
+        session.fail(unhealthyRunHealth('no_result', detail))
       }
       publishSnapshot(session)
     })
     .catch(() => {
-      if (!session.isTerminal()) session.fail()
+      watchdog.stop()
+      if (!session.isTerminal()) {
+        session.fail(unhealthyRunHealth('no_result', 'Workflow subprocess failed to start or crashed.'))
+      }
       publishSnapshot(session)
     })
 
