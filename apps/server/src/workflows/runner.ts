@@ -7,13 +7,17 @@ import {
   parseForgeWorkflowLine,
   type ForgeWorkflowEvent,
 } from '@oma-forge/shared'
-import { resolveRepoRoot } from './paths.js'
+import { resolveProjectRoot } from './paths.js'
 
 const require = createRequire(import.meta.url)
 
 function resolveTsxCli(): string {
   const tsxRoot = dirname(require.resolve('tsx/package.json'))
   return join(tsxRoot, 'dist/cli.mjs')
+}
+
+function resolveWorkflowRunnerEntry(): string {
+  return require.resolve('@oma-forge/reporter/run-workflow')
 }
 
 export type RunWorkflowSubprocessOptions = {
@@ -34,11 +38,12 @@ export async function runWorkflowSubprocess(
   options: RunWorkflowSubprocessOptions,
 ): Promise<RunWorkflowSubprocessResult> {
   const tsxCli = resolveTsxCli()
-  const cwd = resolveRepoRoot()
+  const runnerEntry = resolveWorkflowRunnerEntry()
+  const cwd = resolveProjectRoot()
 
   const child: ChildProcess = spawn(
     process.execPath,
-    [tsxCli, options.workflowPath],
+    [tsxCli, runnerEntry, options.workflowPath],
     {
       cwd,
       env: {

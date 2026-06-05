@@ -1,13 +1,14 @@
-import { bootstrapForgeWorkflow, type ForgeRunContext } from '@oma-forge/reporter'
+import { getForgeReporter } from '@oma-forge/reporter'
 
 /** Minimal workflow for server integration tests (no LLM calls). */
-export default async function run(ctx: ForgeRunContext): Promise<void> {
-  const { goal, reporter } = ctx
+export default async function main() {
+  const goal = process.env.FORGE_GOAL ?? ''
+  const reporter = getForgeReporter()
 
   reporter.onProgress({ type: 'task_start', task: 't1', agent: 'worker' })
   reporter.onTrace({
     type: 'tool_call',
-    runId: ctx.runId,
+    runId: process.env.FORGE_RUN_ID!,
     startMs: 0,
     endMs: 1,
     durationMs: 1,
@@ -20,7 +21,7 @@ export default async function run(ctx: ForgeRunContext): Promise<void> {
   })
   reporter.onProgress({ type: 'task_complete', task: 't1', agent: 'worker' })
 
-  reporter.finish({
+  return {
     success: true,
     goal,
     tasks: [
@@ -34,7 +35,5 @@ export default async function run(ctx: ForgeRunContext): Promise<void> {
     ],
     agentResults: new Map(),
     totalTokenUsage: { input_tokens: 0, output_tokens: 0 },
-  })
+  }
 }
-
-void bootstrapForgeWorkflow(run)

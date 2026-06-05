@@ -6,6 +6,14 @@ function repoRootCandidates(): readonly string[] {
   return [process.cwd(), join(process.cwd(), '..'), join(process.cwd(), '../..')]
 }
 
+/** User project root when launched via `oma-forge` CLI (workflow cwd, `.env`, subprocess). */
+export function resolveProjectRoot(): string {
+  if (process.env.FORGE_PROJECT_ROOT) {
+    return resolve(process.env.FORGE_PROJECT_ROOT)
+  }
+  return resolveRepoRoot()
+}
+
 /** Best-effort monorepo root for resolving default workflow paths. */
 export function resolveRepoRoot(): string {
   for (const base of repoRootCandidates()) {
@@ -34,7 +42,7 @@ export function resolveWorkflowPath(input?: string): string {
   const trimmed = input?.trim()
   if (!trimmed) return resolveDefaultWorkflowPath()
   if (isAbsolute(trimmed)) return trimmed
-  return resolve(resolveRepoRoot(), trimmed)
+  return resolve(resolveProjectRoot(), trimmed)
 }
 
 export function workflowPathExists(path: string): boolean {

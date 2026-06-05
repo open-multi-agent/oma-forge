@@ -1,10 +1,10 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { resolveRepoRoot } from './workflows/paths.js'
+import { resolveProjectRoot } from './workflows/paths.js'
 
-/** Loads repo-root `.env` into `process.env` (does not override existing vars). */
+/** Loads project-root `.env` into `process.env` (does not override existing vars). */
 export function loadEnvFile(): void {
-  const path = join(resolveRepoRoot(), '.env')
+  const path = join(resolveProjectRoot(), '.env')
   if (!existsSync(path)) return
 
   for (const rawLine of readFileSync(path, 'utf8').split('\n')) {
