@@ -1,5 +1,5 @@
 import { OpenMultiAgent } from '@open-multi-agent/core'
-import { bootstrapForgeWorkflow, type ForgeRunContext } from '@oma-forge/reporter'
+import { forgeAbortSignal, forgeHooks } from '@oma-forge/reporter'
 
 const teamConfig = {
   name: 'forge-demo',
@@ -31,36 +31,30 @@ function teamGoal(userGoal: string): string {
 }
 
 /** Built-in demo workflow — tools and MCPs are wired here, not in Forge. */
-export default async function run(ctx: ForgeRunContext): Promise<void> {
-  const { goal, abortSignal, reporter } = ctx
-
+export default async function main() {
   const apiKey = process.env.GOOGLE_API_KEY ?? process.env.GEMINI_API_KEY
   if (!apiKey) {
-    reporter.fail(
-      'Missing GOOGLE_API_KEY or GEMINI_API_KEY — add one to .env at the repo root or export it in your shell.',
+    throw new Error(
+      'Missing GOOGLE_API_KEY or GEMINI_API_KEY — add one to .env at the project root or export it in your shell.',
     )
-    process.exit(1)
   }
+
+  const goal = process.env.FORGE_GOAL ?? ''
 
   const oma = new OpenMultiAgent({
     defaultProvider: 'gemini',
     defaultApiKey: apiKey,
     defaultModel: 'gemini-2.5-flash',
-    onProgress: reporter.onProgress,
-    onTrace: reporter.onTrace,
-    onPlanReady: reporter.onPlanReady,
-    onAgentStream: reporter.onAgentStream,
+    // TODO: using existing OMA hooks to stream progress and trace to Forge may block the developer from using it in their workflow.
+    ...forgeHooks(),
   })
 
   const team = oma.createTeam(teamConfig.name, teamConfig)
-  const result = await oma.runTeam(team, teamGoal(goal), {
-    abortSignal,
+  return oma.runTeam(team, teamGoal(goal), {
+    abortSignal: forgeAbortSignal(),
     coordinator: {
       instructions:
         'Always decompose into at least two sequential tasks: one for researcher, one for summary-writer.',
     },
   })
-  reporter.finish(result)
 }
-
-void bootstrapForgeWorkflow(run)

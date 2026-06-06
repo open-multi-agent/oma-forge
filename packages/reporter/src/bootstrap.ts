@@ -1,27 +1,21 @@
-import { createForgeReporter } from './reporter.js'
+import { forgeAbortSignal, forgeRunId, getForgeReporter } from './forge-env.js'
+import { runForgeWorkflow } from './run-forge.js'
 import type { ForgeRunContext } from './types.js'
 
 /**
- * Runs a workflow when Forge spawns it as a subprocess.
- * No-ops when the file is imported without `FORGE_RUN_ID` (e.g. tests).
+ * @deprecated Export a default async function instead; Forge runs it via the workflow runner shim.
  */
 export async function bootstrapForgeWorkflow(
   run: (ctx: ForgeRunContext) => Promise<void>,
 ): Promise<void> {
-  const runId = process.env.FORGE_RUN_ID
-  if (!runId) return
-
-  const goal = process.env.FORGE_GOAL ?? ''
-  const abortController = new AbortController()
-  process.on('SIGTERM', () => abortController.abort())
-
-  const reporter = createForgeReporter(runId)
-
-  try {
-    await run({ runId, goal, abortSignal: abortController.signal, reporter })
-  } catch (error) {
-    const message = error instanceof Error ? error.message : 'Workflow failed'
-    reporter.fail(message)
-    process.exit(1)
-  }
+  await runForgeWorkflow(async () => {
+    const runId = forgeRunId()
+    if (!runId) return
+    await run({
+      runId,
+      goal: process.env.FORGE_GOAL ?? '',
+      abortSignal: forgeAbortSignal(),
+      reporter: getForgeReporter(),
+    })
+  })
 }

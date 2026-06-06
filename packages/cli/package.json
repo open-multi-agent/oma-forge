@@ -1,0 +1,37 @@
+{
+  "name": "oma-forge",
+  "version": "0.1.0",
+  "description": "Local dev UI for Open Multi Agent workflows — run `npx oma-forge <workflow.ts>`",
+  "license": "Apache-2.0",
+  "type": "module",
+  "bin": {
+    "oma-forge": "./dist/cli.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-multi-agent/oma-forge.git",
+    "directory": "packages/cli"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "lint": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@oma-forge/reporter": "*",
+    "@oma-forge/server": "*",
+    "@oma-forge/shared": "*",
+    "@oma-forge/web": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.29",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.1"
+  }
+}
