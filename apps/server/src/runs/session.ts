@@ -9,31 +9,11 @@ import {
   type TaskExecutionRecord,
   type TeamRunResult,
 } from '@oma-forge/shared'
-import { TraceLog } from './trace-log.js'
 import { taskToRecord } from './mapper.js'
+import { applyTaskPatch, taskPatchFromProgressEvent, taskRecordFromResult } from './task-progress.js'
+import { TraceLog } from './trace-log.js'
 
 const TERMINAL_STATUSES = new Set<RunStatus>(['completed', 'failed', 'cancelled'])
-const SHORT_CIRCUIT_TASK_ID = 'short-circuit'
-
-function taskFromProgressData(
-  taskId: string,
-  event: OrchestratorEvent,
-  status: TaskExecutionRecord['status'],
-): TaskExecutionRecord {
-  const taskData = event.data as Task | undefined
-  return {
-    id: taskId,
-    title: taskData?.title ?? taskId,
-    assignee: event.agent ?? taskData?.assignee,
-    status,
-    dependsOn: taskData?.dependsOn ?? [],
-  }
-}
-
-function shortCircuitResultFailed(event: OrchestratorEvent): boolean {
-  const data = event.data as { result?: { success?: boolean } } | undefined
-  return data?.result?.success === false
-}
 
 export class RunSession {
   private status: RunStatus = 'running'
@@ -83,59 +63,12 @@ export class RunSession {
   }
 
   applyProgress(event: OrchestratorEvent): void {
-    if (event.type === 'agent_start' && event.agent && !event.task) {
-      const data = event.data as { phase?: string } | undefined
-      if (data?.phase === 'short-circuit') {
-        this.upsertTask({
-          id: SHORT_CIRCUIT_TASK_ID,
-          title: `Short-circuit: ${event.agent}`,
-          assignee: event.agent,
-          status: 'in_progress',
-          dependsOn: [],
-        })
-      }
-      return
-    }
-
-    if (event.type === 'agent_complete' && !event.task && event.agent) {
-      const data = event.data as { phase?: string } | undefined
-      if (data?.phase === 'short-circuit') {
-        this.upsertTask({
-          id: SHORT_CIRCUIT_TASK_ID,
-          title: `Short-circuit: ${event.agent}`,
-          assignee: event.agent,
-          status: shortCircuitResultFailed(event) ? 'failed' : 'completed',
-          dependsOn: [],
-        })
-      }
-      return
-    }
-
     if (!event.task) return
 
-    if (event.type === 'task_start' || event.type === 'task_retry') {
-      this.upsertTask(taskFromProgressData(event.task, event, 'in_progress'))
-      return
-    }
+    const patch = taskPatchFromProgressEvent(event)
+    if (!patch) return
 
-    if (!this.tasks.some((task) => task.id === event.task)) {
-      this.upsertTask(taskFromProgressData(event.task, event, 'pending'))
-    }
-
-    this.tasks = this.tasks.map((task) => {
-      if (task.id !== event.task) return task
-
-      switch (event.type) {
-        case 'task_complete':
-          return { ...task, status: 'completed' }
-        case 'task_skipped':
-          return { ...task, status: 'skipped' }
-        case 'error':
-          return { ...task, status: 'failed' }
-        default:
-          return task
-      }
-    })
+    this.tasks = applyTaskPatch(this.tasks, patch)
   }
 
   finish(result: TeamRunResult): void {
@@ -144,14 +77,7 @@ export class RunSession {
       this.goal = result.goal
     }
     if (result.tasks !== undefined) {
-      const prior = new Map(this.tasks.map((task) => [task.id, task]))
-      this.tasks = result.tasks.map((task) => ({
-        ...task,
-        dependsOn:
-          (task.dependsOn?.length ?? 0) > 0
-            ? task.dependsOn
-            : (prior.get(task.id)?.dependsOn ?? []),
-      }))
+      this.tasks = result.tasks.map(taskRecordFromResult)
     }
 
     const completionHealth = assessRunCompletion(result, this.trace.length)
@@ -215,24 +141,4 @@ export class RunSession {
     }
   }
 
-  private upsertTask(record: TaskExecutionRecord): void {
-    const index = this.tasks.findIndex((task) => task.id === record.id)
-    if (index === -1) {
-      this.tasks = [...this.tasks, record]
-      return
-    }
-    const prior = this.tasks[index]!
-    this.tasks = this.tasks.map((task, i) =>
-      i === index
-        ? {
-            ...task,
-            ...record,
-            dependsOn:
-              (record.dependsOn?.length ?? 0) > 0
-                ? record.dependsOn
-                : (prior.dependsOn ?? []),
-          }
-        : task,
-    )
-  }
 }

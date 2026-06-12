@@ -33,10 +33,6 @@ export function assessRunCompletion(
   const tasks = result.tasks ?? []
   const tokens = tokenTotal(result.totalTokenUsage)
   const hasTrace = traceLineCount > 0
-  const hasCompletedTask = tasks.some((task) => task.status === 'completed')
-  const hasShortCircuit = tasks.some(
-    (task) => task.id === 'short-circuit' && task.status === 'completed',
-  )
 
   if (tasks.length === 0 && !hasTrace && tokens === 0) {
     return {
@@ -44,23 +40,6 @@ export function assessRunCompletion(
       issue: 'empty_output',
       message:
         'Run reported success but produced no tasks, trace events, or token usage.',
-    }
-  }
-
-  if (tasks.length > 0 && !hasCompletedTask && !hasShortCircuit) {
-    const terminal = tasks.every(
-      (task) =>
-        task.status === 'failed' ||
-        task.status === 'skipped' ||
-        task.status === 'blocked',
-    )
-    const allPending = tasks.every((task) => task.status === 'pending')
-    if (terminal || allPending) {
-      return {
-        ok: false,
-        issue: 'task_failures',
-        message: 'Run reported success but no task reached a completed state.',
-      }
     }
   }
 

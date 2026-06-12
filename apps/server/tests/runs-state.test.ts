@@ -62,8 +62,9 @@ describe('RunSession', () => {
       data: {
         id: 't1',
         title: 'Research topic',
-        status: 'pending',
+        status: 'in_progress',
         description: 'Research',
+        assignee: 'researcher',
         dependsOn: [],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -81,9 +82,14 @@ describe('RunSession', () => {
     ])
   })
 
-  it('does not add a coordinator task to the DAG snapshot', () => {
+  it('does not add coordinator or short-circuit agents to the DAG snapshot', () => {
     const run = new RunSession('run-1', 'Ship the feature')
     run.applyProgress({ type: 'agent_start', agent: 'coordinator' })
+    run.applyProgress({
+      type: 'agent_start',
+      agent: 'researcher',
+      data: { phase: 'short-circuit', goal: 'Quick ask' },
+    })
     expect(run.toSnapshot().tasks).toEqual([])
 
     run.setPlan([
@@ -102,28 +108,7 @@ describe('RunSession', () => {
     ])
   })
 
-  it('tracks short-circuit runs before the final result arrives', () => {
-    const run = new RunSession('run-1', 'Quick ask')
-    run.applyProgress({
-      type: 'agent_start',
-      agent: 'researcher',
-      data: { phase: 'short-circuit', goal: 'Quick ask' },
-    })
-    expect(run.toSnapshot().tasks[0]).toMatchObject({
-      id: 'short-circuit',
-      assignee: 'researcher',
-      status: 'in_progress',
-    })
-
-    run.applyProgress({
-      type: 'agent_complete',
-      agent: 'researcher',
-      data: { phase: 'short-circuit', result: { success: true } },
-    })
-    expect(run.toSnapshot().tasks[0]?.status).toBe('completed')
-  })
-
-  it('preserves dependsOn from the plan when task_start omits it', () => {
+  it('uses dependsOn from oma-core task_start payload only', () => {
     const run = new RunSession('run-1', 'Goal')
     run.setPlan([
       {
@@ -160,10 +145,10 @@ describe('RunSession', () => {
       },
     })
 
-    expect(run.toSnapshot().tasks[1]?.dependsOn).toEqual(['t1'])
+    expect(run.toSnapshot().tasks[1]?.dependsOn).toEqual([])
   })
 
-  it('preserves dependsOn from the plan when the final result omits it', () => {
+  it('uses dependsOn from oma-core final result only', () => {
     const run = new RunSession('run-1', 'Goal')
     run.setPlan([
       {
@@ -196,7 +181,7 @@ describe('RunSession', () => {
       totalTokenUsage: { input_tokens: 1, output_tokens: 0 },
     })
 
-    expect(run.toSnapshot().tasks[1]?.dependsOn).toEqual(['t1'])
+    expect(run.toSnapshot().tasks[1]?.dependsOn).toEqual([])
   })
 
   it('finishes with team run result tasks and metrics', () => {
