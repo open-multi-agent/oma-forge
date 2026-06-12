@@ -123,6 +123,46 @@ describe('RunSession', () => {
     expect(run.toSnapshot().tasks[0]?.status).toBe('completed')
   })
 
+  it('preserves dependsOn from the plan when task_start omits it', () => {
+    const run = new RunSession('run-1', 'Goal')
+    run.setPlan([
+      {
+        id: 't1',
+        title: 'Research',
+        status: 'pending',
+        description: 'Research',
+        dependsOn: [],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+      {
+        id: 't2',
+        title: 'Summarize',
+        status: 'pending',
+        description: 'Summarize',
+        dependsOn: ['t1'],
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ])
+
+    run.applyProgress({
+      type: 'task_start',
+      task: 't2',
+      agent: 'summary-writer',
+      data: {
+        id: 't2',
+        title: 'Summarize',
+        status: 'in_progress',
+        description: 'Summarize',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    })
+
+    expect(run.toSnapshot().tasks[1]?.dependsOn).toEqual(['t1'])
+  })
+
   it('preserves dependsOn from the plan when the final result omits it', () => {
     const run = new RunSession('run-1', 'Goal')
     run.setPlan([

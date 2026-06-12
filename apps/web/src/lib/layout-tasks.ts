@@ -17,38 +17,16 @@ export interface LayoutTasksResult {
   readonly nodeH: number
 }
 
-/**
- * OMA often omits dependsOn on final task records. When no task declares deps,
- * infer a simple chain in plan order so the DAG still renders edges.
- */
-export function resolveTaskDependencies<T extends LayoutTaskInput>(
-  taskList: readonly T[],
-): readonly (T & { readonly dependsOn: readonly string[] })[] {
-  const hasExplicit = taskList.some((task) => (task.dependsOn?.length ?? 0) > 0)
-  if (hasExplicit || taskList.length < 2) {
-    return taskList.map((task) => ({
-      ...task,
-      dependsOn: task.dependsOn ?? [],
-    }))
-  }
-
-  return taskList.map((task, index) => ({
-    ...task,
-    dependsOn: index === 0 ? [] : [taskList[index - 1]!.id],
-  }))
-}
-
-/** Topological column layout for the team-run DAG canvas. */
+/** Topological column layout for the team-run DAG canvas (matches oma-core layout). */
 export function layoutTasks<T extends LayoutTaskInput>(
   taskList: readonly T[],
 ): LayoutTasksResult {
-  const normalized = resolveTaskDependencies(taskList)
-  const byId = new Map(normalized.map((task) => [task.id, task]))
-  const children = new Map<string, string[]>(normalized.map((task) => [task.id, []]))
+  const byId = new Map(taskList.map((task) => [task.id, task]))
+  const children = new Map<string, string[]>(taskList.map((task) => [task.id, []]))
   const indegree = new Map<string, number>()
 
-  for (const task of normalized) {
-    const deps = task.dependsOn.filter((dep) => byId.has(dep))
+  for (const task of taskList) {
+    const deps = (task.dependsOn ?? []).filter((dep) => byId.has(dep))
     indegree.set(task.id, deps.length)
     for (const depId of deps) {
       children.get(depId)!.push(task.id)
@@ -58,7 +36,7 @@ export function layoutTasks<T extends LayoutTaskInput>(
   const levels = new Map<string, number>()
   const queue: string[] = []
   let processed = 0
-  for (const task of normalized) {
+  for (const task of taskList) {
     if ((indegree.get(task.id) ?? 0) === 0) {
       levels.set(task.id, 0)
       queue.push(task.id)
@@ -79,16 +57,16 @@ export function layoutTasks<T extends LayoutTaskInput>(
     }
   }
 
-  if (processed !== normalized.length) {
+  if (processed !== taskList.length) {
     throw new Error('Task dependency graph contains a cycle')
   }
 
-  for (const task of normalized) {
+  for (const task of taskList) {
     if (!levels.has(task.id)) levels.set(task.id, 0)
   }
 
-  const cols = new Map<number, (typeof normalized)[number][]>()
-  for (const task of normalized) {
+  const cols = new Map<number, T[]>()
+  for (const task of taskList) {
     const level = levels.get(task.id) ?? 0
     if (!cols.has(level)) cols.set(level, [])
     cols.get(level)!.push(task)
@@ -116,8 +94,8 @@ export function layoutTasks<T extends LayoutTaskInput>(
   }
 
   const edges: LayoutEdge[] = []
-  for (const task of normalized) {
-    for (const depId of task.dependsOn) {
+  for (const task of taskList) {
+    for (const depId of task.dependsOn ?? []) {
       if (byId.has(depId)) edges.push({ fromId: depId, toId: task.id })
     }
   }

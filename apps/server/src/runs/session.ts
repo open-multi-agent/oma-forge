@@ -221,6 +221,18 @@ export class RunSession {
       this.tasks = [...this.tasks, record]
       return
     }
-    this.tasks = this.tasks.map((task, i) => (i === index ? { ...task, ...record } : task))
+    const prior = this.tasks[index]!
+    this.tasks = this.tasks.map((task, i) =>
+      i === index
+        ? {
+            ...task,
+            ...record,
+            dependsOn:
+              (record.dependsOn?.length ?? 0) > 0
+                ? record.dependsOn
+                : (prior.dependsOn ?? []),
+          }
+        : task,
+    )
   }
 }
